@@ -1,0 +1,31 @@
+body {
+  background: linear-gradient(170deg, #f2ece6 0%, #ECE7DF 50%, #e6ddd2 100%);
+}
+
+.effect-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.bokeh-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 190, 150, 0.5) 0%, rgba(212, 190, 150, 0) 70%);
+  animation: bokehFloat ease-in-out infinite;
+}
+
+@keyframes bokehFloat {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(0) scale(1);
+  }
+  20% { opacity: 1; }
+  80% { opacity: 0.8; }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(1.2);
+  }
+}

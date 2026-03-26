@@ -1,0 +1,60 @@
+body {
+  background-color: #ECE7DF;
+}
+
+.effect-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.floral-corner {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.12;
+}
+
+.floral-corner.top {
+  top: -10px;
+  right: -20px;
+  width: 200px;
+  height: 200px;
+  animation: sway 8s ease-in-out infinite;
+}
+
+.floral-corner.bottom {
+  bottom: -10px;
+  left: -20px;
+  width: 180px;
+  height: 180px;
+  transform: rotate(180deg);
+  animation: swayReverse 8s ease-in-out infinite;
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg) translateX(5px); }
+}
+
+@keyframes swayReverse {
+  0%, 100% { transform: rotate(180deg); }
+  50% { transform: rotate(183deg) translateX(5px); }
+}
+
+.sparkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #9a8e8b;
+  border-radius: 50%;
+  opacity: 0;
+  animation: sparkleAnim ease-in-out infinite;
+}
+
+@keyframes sparkleAnim {
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 0.3; transform: scale(1); }
+}
