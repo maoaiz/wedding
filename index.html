@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eyla & Mauricio - Save the Date</title>
+  <meta name="description" content="Eyla & Mauricio se casan. 6 de junio de 2026.">
+  <meta property="og:title" content="Eyla & Mauricio - Save the Date">
+  <meta property="og:description" content="Nos casamos el 6 de junio de 2026">
+  <meta property="og:image" content="images/hero.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Gilda+Display&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --cream: #ECE7DF;
+      --taupe: #766865;
+      --taupe-light: #9a8e8b;
+      --dark: #333333;
+      --white: #FFFFFF;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Gilda Display', serif;
+      background-color: var(--cream);
+      color: var(--taupe);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1px;
+      height: 60px;
+      background: var(--taupe-light);
+      opacity: 0.4;
+    }
+
+    .save-the-date-label {
+      font-family: 'Lato', sans-serif;
+      font-weight: 300;
+      font-size: 0.75rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--taupe-light);
+      margin-top: 80px;
+      margin-bottom: 2rem;
+    }
+
+    .photo-frame {
+      position: relative;
+      width: min(400px, 85vw);
+      aspect-ratio: 3/4;
+      margin: 0 auto 2.5rem;
+    }
+
+    .photo-frame::before {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border: 1px solid var(--taupe-light);
+      opacity: 0.3;
+    }
+
+    .photo-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 20%;
+      display: block;
+    }
+
+    .names {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.5rem, 8vw, 4.5rem);
+      font-weight: 400;
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+
+    .names .ampersand {
+      font-style: italic;
+      font-size: 0.8em;
+      display: block;
+      line-height: 1;
+      margin: 0.1em 0;
+    }
+
+    .date-text {
+      font-family: 'Lato', sans-serif;
+      font-weight: 300;
+      font-size: 1rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--taupe-light);
+      margin-top: 1.5rem;
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      animation: float 2s ease-in-out infinite;
+    }
+
+    .scroll-hint svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--taupe-light);
+      opacity: 0.5;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(8px); }
+    }
+
+    /* Details Section */
+    .details {
+      padding: 6rem 2rem;
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .ornament {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--taupe-light);
+      opacity: 0.5;
+      margin-bottom: 2rem;
+    }
+
+    .details h2 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      margin-bottom: 2rem;
+      line-height: 1.4;
+    }
+
+    .date-highlight {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      margin: 3rem 0;
+    }
+
+    .date-highlight .line {
+      flex: 1;
+      max-width: 80px;
+      height: 1px;
+      background: var(--taupe-light);
+      opacity: 0.3;
+    }
+
+    .date-highlight .date-big {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 400;
+    }
+
+    .date-detail {
+      font-family: 'Lato', sans-serif;
+      font-weight: 300;
+      font-size: 0.9rem;
+      letter-spacing: 0.2em;
+      color: var(--taupe-light);
+      margin-bottom: 0.5rem;
+    }
+
+    /* Gallery Section */
+    .gallery {
+      padding: 4rem 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .gallery-grid .photo-item {
+      overflow: hidden;
+      position: relative;
+    }
+
+    .gallery-grid .photo-item:first-child {
+      grid-row: span 2;
+    }
+
+    .gallery-grid .photo-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s ease;
+    }
+
+    .gallery-grid .photo-item:hover img {
+      transform: scale(1.03);
+    }
+
+    /* Closing Section */
+    .closing {
+      padding: 6rem 2rem;
+      text-align: center;
+    }
+
+    .closing p {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: clamp(1.1rem, 3vw, 1.4rem);
+      line-height: 1.6;
+      max-width: 500px;
+      margin: 0 auto;
+      color: var(--taupe);
+    }
+
+    .closing .final-ornament {
+      margin-top: 3rem;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      color: var(--taupe-light);
+      opacity: 0.4;
+    }
+
+    /* Footer */
+    footer {
+      padding: 2rem;
+      text-align: center;
+      font-family: 'Lato', sans-serif;
+      font-weight: 300;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: var(--taupe-light);
+      opacity: 0.6;
+    }
+
+    /* Animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .gallery-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .gallery-grid .photo-item:first-child {
+        grid-row: span 1;
+      }
+
+      .date-highlight {
+        gap: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <section class="hero">
+    <p class="save-the-date-label">Save the Date</p>
+
+    <div class="photo-frame">
+      <img src="images/hero.jpg" alt="Eyla y Mauricio">
+    </div>
+
+    <h1 class="names">
+      Eyla
+      <span class="ampersand">&</span>
+      Mauricio
+    </h1>
+
+    <p class="date-text">6 de junio de 2026</p>
+
+    <div class="scroll-hint">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round">
+        <path d="M12 5v14M5 12l7 7 7-7"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Details -->
+  <section class="details fade-in">
+    <div class="ornament">&mdash;</div>
+
+    <h2>Estamos felices de compartir<br>este momento con ustedes</h2>
+
+    <div class="date-highlight">
+      <div class="line"></div>
+      <div>
+        <p class="date-detail">Sabado</p>
+        <p class="date-big">06.06.2026</p>
+      </div>
+      <div class="line"></div>
+    </div>
+
+    <p class="date-detail">Pronto les compartiremos mas detalles</p>
+  </section>
+
+  <!-- Gallery -->
+  <section class="gallery fade-in">
+    <div class="gallery-grid">
+      <div class="photo-item">
+        <img src="images/secondary.jpg" alt="Eyla y Mauricio">
+      </div>
+      <div class="photo-item">
+        <img src="images/together.jpg" alt="Eyla y Mauricio">
+      </div>
+      <div class="photo-item">
+        <img src="images/walking.jpg" alt="Eyla y Mauricio caminando">
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing -->
+  <section class="closing fade-in">
+    <p>El amor no se mira, se siente,<br>y aun mas cuando tu estas presente.</p>
+    <div class="final-ornament">&hearts;</div>
+  </section>
+
+  <footer>
+    Eyla & Mauricio &middot; 2026
+  </footer>
+
+  <script>
+    // Fade-in on scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>
