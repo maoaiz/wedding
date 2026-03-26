@@ -1,7 +1,7 @@
 body {
-  background: linear-gradient(135deg, #f0e6dc, #ece7df, #e3d5c8, #ece0d4, #ece7df);
+  background: linear-gradient(135deg, #f5e6d8, #e8d5c4, #dcc8b8, #e8d0c0, #f0ddd0, #e2cfc2);
   background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite;
+  animation: gradientShift 12s ease infinite;
 }
 
 @keyframes gradientShift {
