@@ -3,11 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Eyla & Mauricio - Save the Date</title>
-  <meta name="description" content="Eyla & Mauricio se casan. 6 de junio de 2026.">
-  <meta property="og:title" content="Eyla & Mauricio - Save the Date">
-  <meta property="og:description" content="Nos casamos el 6 de junio de 2026">
-  <meta property="og:image" content="images/hero.jpg">
+  <title>Opcion 2 - Gradiente animado</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
@@ -18,45 +14,21 @@
       --taupe: #766865;
       --taupe-light: #9a8e8b;
       --white: #FFFFFF;
-      --rose: #d4a9a1;
-      --rose-light: #e8ccc6;
     }
     body {
       font-family: 'Lato', sans-serif;
-      background: linear-gradient(160deg, #f2ece6 0%, #ECE7DF 40%, #e8ddd3 100%);
       color: var(--taupe);
       min-height: 100dvh;
-      overflow-x: hidden;
+      background: linear-gradient(135deg, #f0e6dc, #ece7df, #e3d5c8, #ece0d4, #ece7df);
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
     }
-
-    /* Floating petals */
-    .petals-container {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      overflow: hidden;
-      z-index: 0;
-    }
-    .petal {
-      position: absolute;
-      width: 12px;
-      height: 16px;
-      background: var(--rose-light);
-      border-radius: 50% 0 50% 50%;
-      opacity: 0;
-      animation: petalFall linear infinite;
-    }
-    @keyframes petalFall {
-      0% {
-        opacity: 0;
-        transform: translateY(-20px) rotate(0deg) translateX(0);
-      }
-      10% { opacity: 0.6; }
-      90% { opacity: 0.4; }
-      100% {
-        opacity: 0;
-        transform: translateY(100dvh) rotate(360deg) translateX(80px);
-      }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      25% { background-position: 100% 50%; }
+      50% { background-position: 100% 0%; }
+      75% { background-position: 0% 100%; }
+      100% { background-position: 0% 50%; }
     }
 
     .card {
@@ -67,7 +39,6 @@
       text-align: center;
       padding: 2rem 1.5rem;
       position: relative;
-      z-index: 1;
     }
     .photo {
       width: min(220px, 55vw);
@@ -130,7 +101,6 @@
   </style>
 </head>
 <body>
-  <div class="petals-container" id="petals"></div>
   <div class="card">
     <div class="photo"><img src="images/hero.jpg" alt="Eyla y Mauricio"></div>
     <p class="label">Save the Date</p>
@@ -139,72 +109,10 @@
     <p class="message">Nos casamos! Si, en serio. Llego el dia de dar el paso mas importante de nuestras vidas: celebrar el sacramento del matrimonio. Y queremos que estes ahi.</p>
     <p class="message-secondary">Reserva esta fecha en tu agenda, pronto recibiras todos los detalles. Por favor confirma tu asistencia antes del 6 de mayo.</p>
     <div class="actions">
-      <a href="https://withjoy.com/mauricio-y-eyla/rsvp" class="btn btn-primary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-          <polyline points="22 4 12 14.01 9 11.01"/>
-        </svg>
-        Confirmar asistencia
-      </a>
-      <a href="#" class="btn btn-secondary" id="calendarBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-        Agregar al calendario
-      </a>
+      <a href="#" class="btn btn-primary">Confirmar asistencia</a>
+      <a href="#" class="btn btn-secondary">Agregar al calendario</a>
     </div>
     <p class="footer">E & M &middot; 2026</p>
   </div>
-  <script>
-    // Petals
-    const container = document.getElementById('petals');
-    for (let i = 0; i < 20; i++) {
-      const petal = document.createElement('div');
-      petal.className = 'petal';
-      petal.style.left = Math.random() * 100 + '%';
-      petal.style.animationDuration = (8 + Math.random() * 12) + 's';
-      petal.style.animationDelay = (Math.random() * 10) + 's';
-      petal.style.width = (8 + Math.random() * 8) + 'px';
-      petal.style.height = (10 + Math.random() * 10) + 'px';
-      petal.style.opacity = 0;
-      container.appendChild(petal);
-    }
-
-    // Calendar
-    document.getElementById('calendarBtn').addEventListener('click', function(e) {
-      e.preventDefault();
-      const title = encodeURIComponent('Boda Eyla & Mauricio');
-      const date = '20260606';
-      const details = encodeURIComponent('Boda de Eyla y Mauricio. Mas detalles pronto.');
-      const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${date}/${date}&details=${details}`;
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isMac = /Macintosh/.test(navigator.userAgent);
-      if (isIOS || isMac) {
-        const ics = [
-          'BEGIN:VCALENDAR',
-          'VERSION:2.0',
-          'BEGIN:VEVENT',
-          'DTSTART:20260606',
-          'DTEND:20260607',
-          'SUMMARY:Boda Eyla & Mauricio',
-          'DESCRIPTION:Boda de Eyla y Mauricio. Mas detalles pronto.',
-          'END:VEVENT',
-          'END:VCALENDAR'
-        ].join('\r\n');
-        const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'boda-eyla-mauricio.ics';
-        a.click();
-        URL.revokeObjectURL(url);
-      } else {
-        window.open(gcalUrl, '_blank');
-      }
-    });
-  </script>
 </body>
 </html>
