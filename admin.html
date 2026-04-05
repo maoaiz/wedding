@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Boda E&M</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #ECE7DF;
+      color: #766865;
+      padding: 1.5rem 1rem;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 1.2rem; text-align: center; margin-bottom: 1.5rem; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 1rem;
+      margin-bottom: 0.7rem;
+      border: none;
+      border-radius: 12px;
+      background: #766865;
+      color: white;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .btn:active { opacity: 0.7; }
+    .btn.secondary { background: transparent; border: 1.5px solid #9a8e8b; color: #766865; }
+    .status {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #9a8e8b;
+      margin-top: 1rem;
+      min-height: 1.5rem;
+    }
+    a.link {
+      display: block;
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #766865;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Admin - Boda Eyla & Mauricio</h1>
+
+  <button class="btn" onclick="run('generar_mapa')">Generar mapa de mesas</button>
+  <button class="btn" onclick="run('setup_mesas')">Configurar mesas</button>
+  <button class="btn secondary" onclick="run('crear_resumen')">Crear Resumen</button>
+
+  <p class="status" id="status"></p>
+
+  <a class="link" href="https://docs.google.com/spreadsheets/d/1rTGn5WOs_b3OFi1n3PVdrZZ8wA4Qm6ARYTQvcTfWgVw/edit" target="_blank">Abrir Google Sheet</a>
+
+  <script>
+    var API = 'https://script.google.com/macros/s/AKfycbynQzCmptXpWzI4J1VhxHmt5oT_OyfW0RxrjHM7lE0yYatvAaaRVZtpK5xRPV0FI2kU/exec';
+
+    function run(action) {
+      var status = document.getElementById('status');
+      status.textContent = 'Ejecutando...';
+
+      var callbackName = '_cb_' + Date.now();
+      window[callbackName] = function(data) {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        if (data.success) {
+          status.textContent = 'Listo!';
+        } else {
+          status.textContent = 'Error: ' + (data.error || 'desconocido');
+        }
+      };
+      var script = document.createElement('script');
+      script.src = API + '?action=' + action + '&callback=' + callbackName;
+      script.onerror = function() {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        status.textContent = 'Error de conexion';
+      };
+      document.body.appendChild(script);
+    }
+  </script>
+</body>
+</html>

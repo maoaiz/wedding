@@ -26,6 +26,10 @@ function doGet(e) {
     try { setupMesasRemote(); return respondGet({ success: true }, callback); }
     catch (err) { return respondGet({ error: err.message }, callback); }
   }
+  if (action === 'crear_resumen') {
+    try { createResumenRemote(); return respondGet({ success: true }, callback); }
+    catch (err) { return respondGet({ error: err.message }, callback); }
+  }
   if (action === 'generar_mapa') {
     try { generateMapaMesasRemote(); return respondGet({ success: true }, callback); }
     catch (err) { return respondGet({ error: err.message }, callback); }
@@ -698,6 +702,68 @@ function setupMesasRemote() {
   var invRules = sheet.getConditionalFormatRules();
   invRules.push(SpreadsheetApp.newConditionalFormatRule().whenTextContains('Mesa').setBackground('#d9ead3').setRanges([mesaRange]).build());
   sheet.setConditionalFormatRules(invRules);
+}
+
+function createResumenRemote() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  var colLetter = {};
+  headers.forEach(function(h, i) {
+    colLetter[h] = String.fromCharCode(65 + i);
+    if (i >= 26) colLetter[h] = 'A' + String.fromCharCode(65 + i - 26);
+  });
+
+  var conf = colLetter['confirmado'];
+  var menu = colLetter['menu'];
+  var nino = colLetter['es_nino'];
+  var nombre = colLetter['Nombre'];
+  var etiqueta = colLetter['Etiqueta'];
+  var visitas = colLetter['visitas'];
+
+  var resSheet = ss.getSheetByName('Resumen');
+  if (!resSheet) resSheet = ss.insertSheet('Resumen');
+  else resSheet.clearContents();
+
+  var data = [
+    ['RESUMEN GENERAL', ''],
+    ['', ''],
+    ['Total invitados', '=COUNTA(Invitados!' + nombre + '2:' + nombre + ')'],
+    ['Confirmados (si)', '=COUNTIF(Invitados!' + conf + '2:' + conf + ', "si")'],
+    ['No asisten', '=COUNTIF(Invitados!' + conf + '2:' + conf + ', "no")'],
+    ['A\u00fan no saben', '=COUNTIF(Invitados!' + conf + '2:' + conf + ', "tal_vez")'],
+    ['Sin responder', '=COUNTA(Invitados!' + nombre + '2:' + nombre + ')-COUNTIF(Invitados!' + conf + '2:' + conf + ',"si")-COUNTIF(Invitados!' + conf + '2:' + conf + ',"no")-COUNTIF(Invitados!' + conf + '2:' + conf + ',"tal_vez")'],
+    ['', ''],
+    ['MENUS', ''],
+    ['Normal', '=COUNTIF(Invitados!' + menu + '2:' + menu + ', "normal")'],
+    ['Vegetariano', '=COUNTIF(Invitados!' + menu + '2:' + menu + ', "vegetariano")'],
+    ['Infantil', '=COUNTIF(Invitados!' + menu + '2:' + menu + ', "infantil")'],
+    ['', ''],
+    ['NI\u00d1OS', ''],
+    ['Total ni\u00f1os', '=COUNTIF(Invitados!' + nino + '2:' + nino + ', "Si")'],
+    ['', ''],
+    ['POR ETIQUETA', ''],
+    ['Brice\u00f1os', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Brice\u00f1os*")'],
+    ['Amigos Eyla', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Amigos Eyla*")'],
+    ['Amigos Mauricio', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Amigos Mauricio*")'],
+    ['Pekin', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Pekin*")'],
+    ['Astros', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Astros*")'],
+    ['Aizagas', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Aizagas*")'],
+    ['iKono', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*iKono*")'],
+    ['UTP', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*UTP*")'],
+    ['Pasto', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Pasto*")'],
+    ['', ''],
+    ['ENGAGEMENT', ''],
+    ['Han abierto el enlace', '=COUNTIF(Invitados!' + visitas + '2:' + visitas + ', ">"&0)'],
+    ['Total visitas', '=SUM(Invitados!' + visitas + '2:' + visitas + ')'],
+  ];
+
+  resSheet.getRange(1, 1, data.length, 2).setValues(data);
+  var boldRows = [1, 9, 14, 17, 28];
+  boldRows.forEach(function(r) { resSheet.getRange(r, 1, 1, 2).setFontWeight('bold'); });
+  resSheet.setColumnWidth(1, 280);
+  resSheet.setColumnWidth(2, 100);
 }
 
 function confLabel(conf) {
