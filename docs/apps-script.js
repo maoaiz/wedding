@@ -261,8 +261,7 @@ function generateWhatsAppMessages() {
     var heart = String.fromCodePoint(0x2764) + String.fromCodePoint(0xFE0F);
     var down = String.fromCodePoint(0x1F447);
     var pray = String.fromCodePoint(0x1F64F);
-    var groupName = group.replace(/&/g, 'y');
-    var message = 'Hola ' + groupName + '! ' + ring + '\n\n' +
+    var message = 'Hola ' + group + '! ' + ring + '\n\n' +
       'Queremos compartir contigo una noticia que nos llena de alegr\u00eda: \u00a1nos casamos! ' + bride + groom + party + '\n\n' +
       'Nos encantar\u00eda que nos acompa\u00f1aras en este d\u00eda tan especial. ' + heart + '\n\n' +
       'Por favor confirma tu asistencia antes del 6 de mayo ' + down + '\n' + url + '\n\n' +
