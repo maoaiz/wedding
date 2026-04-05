@@ -21,7 +21,17 @@ function doGet(e) {
   var callback = e.parameter.callback || '';
   var action = e.parameter.action || 'get';
 
-if (!code) {
+  // Admin actions (no code needed)
+  if (action === 'setup_mesas') {
+    try { setupMesasRemote(); return respondGet({ success: true }, callback); }
+    catch (err) { return respondGet({ error: err.message }, callback); }
+  }
+  if (action === 'generar_mapa') {
+    try { generateMapaMesasRemote(); return respondGet({ success: true }, callback); }
+    catch (err) { return respondGet({ error: err.message }, callback); }
+  }
+
+  if (!code) {
     return respondGet({ error: 'no_code' }, callback);
   }
 
@@ -387,11 +397,10 @@ function setupMesas() {
   var col = {};
   headers.forEach(function(h, i) { col[h] = i; });
 
-  // Check if "mesa" column exists, if not add it
+  // Check if "mesa" column exists
   if (col['mesa'] === undefined) {
-    var nextCol = sheet.getLastColumn() + 1;
-    sheet.getRange(1, nextCol).setValue('mesa');
-    col['mesa'] = nextCol - 1;
+    SpreadsheetApp.getUi().alert('No se encontr\u00f3 la columna "mesa" en Invitados. Cr\u00e9ala primero.');
+    return;
   }
 
   var mesaColIndex = col['mesa'] + 1; // 1-based for getRange
@@ -615,6 +624,168 @@ function generateMapaMesas() {
   mapaSheet.setColumnWidth(4, 30); // spacer
 
   SpreadsheetApp.getUi().alert('Mapa de mesas generado.');
+}
+
+// Remote versions (no getUi)
+function setupMesasRemote() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  var col = {};
+  headers.forEach(function(h, i) { col[h] = i; });
+
+  if (col['mesa'] === undefined) throw new Error('Columna "mesa" no encontrada');
+
+  var mesaColIndex = col['mesa'] + 1;
+  var mesasSheet = ss.getSheetByName('Mesas');
+  if (!mesasSheet) mesasSheet = ss.insertSheet('Mesas');
+  else { mesasSheet.clearContents(); mesasSheet.clearFormats(); }
+
+  var tableNames = ['Mesa 1','Mesa 2','Mesa 3','Mesa 4','Mesa 5','Mesa 6','Mesa 7','Mesa 8'];
+  var mesaCol = String.fromCharCode(65 + col['mesa']);
+  var lastRow = sheet.getLastRow();
+
+  mesasSheet.getRange(1, 1, 1, 4).setValues([['Mesa', 'Capacidad', 'Ocupados', 'Disponibles']]);
+  mesasSheet.getRange(1, 1, 1, 4).setFontWeight('bold');
+
+  for (var i = 0; i < tableNames.length; i++) {
+    var row = i + 2;
+    mesasSheet.getRange(row, 1).setValue(tableNames[i]);
+    mesasSheet.getRange(row, 2).setValue(10);
+    mesasSheet.getRange(row, 3).setFormula('=COUNTIF(Invitados!' + mesaCol + '2:' + mesaCol + lastRow + ', A' + row + ')');
+    mesasSheet.getRange(row, 4).setFormula('=B' + row + '-C' + row);
+  }
+
+  var totalRow = tableNames.length + 2;
+  mesasSheet.getRange(totalRow, 1).setValue('TOTAL');
+  mesasSheet.getRange(totalRow, 1).setFontWeight('bold');
+  mesasSheet.getRange(totalRow, 2).setFormula('=SUM(B2:B' + (totalRow - 1) + ')');
+  mesasSheet.getRange(totalRow, 3).setFormula('=SUM(C2:C' + (totalRow - 1) + ')');
+  mesasSheet.getRange(totalRow, 4).setFormula('=SUM(D2:D' + (totalRow - 1) + ')');
+
+  var sinMesaRow = totalRow + 1;
+  mesasSheet.getRange(sinMesaRow, 1).setValue('Sin mesa (confirmados)');
+  mesasSheet.getRange(sinMesaRow, 1).setFontWeight('bold');
+  var confCol = String.fromCharCode(65 + col['confirmado']);
+  mesasSheet.getRange(sinMesaRow, 3).setFormula(
+    '=COUNTIFS(Invitados!' + confCol + '2:' + confCol + lastRow + ',"si",Invitados!' + mesaCol + '2:' + mesaCol + lastRow + ',"")'
+  );
+
+  var rangeDisp = mesasSheet.getRange('D2:D' + (totalRow - 1));
+  var rules = [];
+  rules.push(SpreadsheetApp.newConditionalFormatRule().whenNumberLessThan(0).setBackground('#f4cccc').setRanges([rangeDisp]).build());
+  rules.push(SpreadsheetApp.newConditionalFormatRule().whenNumberEqualTo(0).setBackground('#fff2cc').setRanges([rangeDisp]).build());
+  rules.push(SpreadsheetApp.newConditionalFormatRule().whenNumberGreaterThan(0).setBackground('#d9ead3').setRanges([rangeDisp]).build());
+  mesasSheet.setConditionalFormatRules(rules);
+
+  mesasSheet.setColumnWidth(1, 200);
+  mesasSheet.setColumnWidth(2, 100);
+  mesasSheet.setColumnWidth(3, 100);
+  mesasSheet.setColumnWidth(4, 100);
+
+  var mesaNamesRange = mesasSheet.getRange('A2:A' + (tableNames.length + 1));
+  var rule = SpreadsheetApp.newDataValidation().requireValueInRange(mesaNamesRange, true).setAllowInvalid(false).build();
+  sheet.getRange(2, mesaColIndex, lastRow - 1, 1).setDataValidation(rule);
+
+  var mesaRange = sheet.getRange(2, mesaColIndex, lastRow - 1, 1);
+  var invRules = sheet.getConditionalFormatRules();
+  invRules.push(SpreadsheetApp.newConditionalFormatRule().whenTextContains('Mesa').setBackground('#d9ead3').setRanges([mesaRange]).build());
+  sheet.setConditionalFormatRules(invRules);
+}
+
+function generateMapaMesasRemote() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var mesasSheet = ss.getSheetByName('Mesas');
+  if (!mesasSheet) throw new Error('Primero ejecuta setupMesas');
+
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var col = {};
+  headers.forEach(function(h, i) { col[h] = i; });
+
+  var data = sheet.getDataRange().getValues();
+  var mesasData = mesasSheet.getDataRange().getValues();
+  var tables = {};
+  for (var i = 1; i < mesasData.length; i++) {
+    var name = String(mesasData[i][0]).trim();
+    if (name && name !== 'TOTAL' && name !== 'Sin mesa (confirmados)') {
+      tables[name] = { capacity: mesasData[i][1] || 10, members: [] };
+    }
+  }
+
+  for (var i = 1; i < data.length; i++) {
+    var mesa = String(data[i][col['mesa']]).trim();
+    var nombre = (data[i][col['Nombre']] + ' ' + data[i][col['Apellido']]).trim();
+    if (mesa && tables[mesa]) {
+      tables[mesa].members.push({ nombre: nombre });
+    }
+  }
+
+  var mapaSheet = ss.getSheetByName('Mapa de Mesas');
+  if (!mapaSheet) mapaSheet = ss.insertSheet('Mapa de Mesas');
+  else { mapaSheet.clearContents(); mapaSheet.clearFormats(); }
+
+  var tableNames = Object.keys(tables);
+  var currentRow = 1;
+  var colors = ['#e8d5c4','#d5c4b3','#c4b3a2','#dcc8b8','#e8d0c0','#d0b8a8','#c8b0a0','#e0c8b8'];
+
+  mapaSheet.getRange(currentRow, 1, 1, 10).merge();
+  mapaSheet.getRange(currentRow, 1).setValue('MAPA DE MESAS - Boda Eyla & Mauricio');
+  mapaSheet.getRange(currentRow, 1).setFontWeight('bold').setFontSize(14).setHorizontalAlignment('center');
+  currentRow += 2;
+
+  for (var t = 0; t < tableNames.length; t += 2) {
+    var startRow = currentRow;
+    var leftName = tableNames[t];
+    var leftTable = tables[leftName];
+
+    mapaSheet.getRange(currentRow, 1, 1, 3).merge();
+    mapaSheet.getRange(currentRow, 1).setValue(leftName + ' (' + leftTable.members.length + '/' + leftTable.capacity + ')');
+    mapaSheet.getRange(currentRow, 1).setFontWeight('bold').setHorizontalAlignment('center');
+    mapaSheet.getRange(currentRow, 1, 1, 3).setBackground(colors[t % colors.length]);
+    currentRow++;
+
+    for (var m = 0; m < leftTable.capacity; m++) {
+      mapaSheet.getRange(currentRow, 1, 1, 3).merge();
+      if (m < leftTable.members.length) {
+        mapaSheet.getRange(currentRow, 1).setValue(leftTable.members[m].nombre);
+        mapaSheet.getRange(currentRow, 1).setBackground('#f5f0eb');
+      } else {
+        mapaSheet.getRange(currentRow, 1).setValue('- vac\u00edo -');
+        mapaSheet.getRange(currentRow, 1).setFontColor('#cccccc').setHorizontalAlignment('center');
+      }
+      currentRow++;
+    }
+
+    if (t + 1 < tableNames.length) {
+      var rightName = tableNames[t + 1];
+      var rightTable = tables[rightName];
+      var rightRow = startRow;
+
+      mapaSheet.getRange(rightRow, 5, 1, 3).merge();
+      mapaSheet.getRange(rightRow, 5).setValue(rightName + ' (' + rightTable.members.length + '/' + rightTable.capacity + ')');
+      mapaSheet.getRange(rightRow, 5).setFontWeight('bold').setHorizontalAlignment('center');
+      mapaSheet.getRange(rightRow, 5, 1, 3).setBackground(colors[(t+1) % colors.length]);
+      rightRow++;
+
+      for (var m = 0; m < rightTable.capacity; m++) {
+        mapaSheet.getRange(rightRow, 5, 1, 3).merge();
+        if (m < rightTable.members.length) {
+          mapaSheet.getRange(rightRow, 5).setValue(rightTable.members[m].nombre);
+          mapaSheet.getRange(rightRow, 5).setBackground('#f5f0eb');
+        } else {
+          mapaSheet.getRange(rightRow, 5).setValue('- vac\u00edo -');
+          mapaSheet.getRange(rightRow, 5).setFontColor('#cccccc').setHorizontalAlignment('center');
+        }
+        rightRow++;
+      }
+    }
+    currentRow += 2;
+  }
+
+  for (var c = 1; c <= 8; c++) mapaSheet.setColumnWidth(c, 120);
+  mapaSheet.setColumnWidth(4, 30);
 }
 
 // Menu
