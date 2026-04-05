@@ -268,11 +268,15 @@ function generateWhatsAppMessages() {
       'Un abrazo, Eyla y Mauricio ' + pray;
     var encodedMsg = encodeURIComponent(message);
     var phone = info.phone || '';
-    var waLink = phone ? 'https://wa.me/' + phone.replace(/[^0-9]/g, '') + '?text=' + encodedMsg : '';
+    var cleanPhone = phone ? phone.replace(/[^0-9]/g, '') : '';
+    var waLink = cleanPhone ? 'https://wa.me/' + cleanPhone + '?text=' + encodedMsg : '';
 
-    msgSheet.getRange(i + 2, 1, 1, 5).setValues([[
-      group, phone, info.code, url, waLink
-    ]]);
+    var row = i + 2;
+    msgSheet.getRange(row, 1, 1, 3).setValues([[group, phone, info.code]]);
+    msgSheet.getRange(row, 4).setFormula('=HYPERLINK("' + url + '", "Ver invitaci\u00f3n")');
+    if (waLink) {
+      msgSheet.getRange(row, 5).setFormula('=HYPERLINK("' + waLink.replace(/"/g, '""') + '", "Enviar WhatsApp")');
+    }
   });
 
   msgSheet.autoResizeColumns(1, 5);
