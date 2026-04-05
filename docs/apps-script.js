@@ -700,6 +700,13 @@ function setupMesasRemote() {
   sheet.setConditionalFormatRules(invRules);
 }
 
+function confLabel(conf) {
+  if (conf === 'si') return { text: 'Confirmado', color: '#d9ead3' };
+  if (conf === 'no') return { text: 'No asiste', color: '#f4cccc' };
+  if (conf === 'tal_vez') return { text: 'No sabe', color: '#fff2cc' };
+  return { text: 'Pendiente', color: '#eeeeee' };
+}
+
 function generateMapaMesasRemote() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
@@ -723,8 +730,9 @@ function generateMapaMesasRemote() {
   for (var i = 1; i < data.length; i++) {
     var mesa = String(data[i][col['mesa']]).trim();
     var nombre = (data[i][col['Nombre']] + ' ' + data[i][col['Apellido']]).trim();
+    var conf = String(data[i][col['confirmado']]).trim().toLowerCase();
     if (mesa && tables[mesa]) {
-      tables[mesa].members.push({ nombre: nombre });
+      tables[mesa].members.push({ nombre: nombre, confirmado: conf });
     }
   }
 
@@ -753,11 +761,16 @@ function generateMapaMesasRemote() {
     currentRow++;
 
     for (var m = 0; m < leftTable.capacity; m++) {
-      mapaSheet.getRange(currentRow, 1, 1, 3).merge();
       if (m < leftTable.members.length) {
-        mapaSheet.getRange(currentRow, 1).setValue(leftTable.members[m].nombre);
-        mapaSheet.getRange(currentRow, 1).setBackground('#f5f0eb');
+        var p = leftTable.members[m];
+        mapaSheet.getRange(currentRow, 1, 1, 2).merge();
+        mapaSheet.getRange(currentRow, 1).setValue(p.nombre);
+        mapaSheet.getRange(currentRow, 1, 1, 2).setBackground('#f5f0eb');
+        var estado = confLabel(p.confirmado);
+        mapaSheet.getRange(currentRow, 3).setValue(estado.text);
+        mapaSheet.getRange(currentRow, 3).setBackground(estado.color).setFontSize(9).setHorizontalAlignment('center');
       } else {
+        mapaSheet.getRange(currentRow, 1, 1, 3).merge();
         mapaSheet.getRange(currentRow, 1).setValue('- vac\u00edo -');
         mapaSheet.getRange(currentRow, 1).setFontColor('#cccccc').setHorizontalAlignment('center');
       }
@@ -776,11 +789,16 @@ function generateMapaMesasRemote() {
       rightRow++;
 
       for (var m = 0; m < rightTable.capacity; m++) {
-        mapaSheet.getRange(rightRow, 5, 1, 3).merge();
         if (m < rightTable.members.length) {
-          mapaSheet.getRange(rightRow, 5).setValue(rightTable.members[m].nombre);
-          mapaSheet.getRange(rightRow, 5).setBackground('#f5f0eb');
+          var p = rightTable.members[m];
+          mapaSheet.getRange(rightRow, 5, 1, 2).merge();
+          mapaSheet.getRange(rightRow, 5).setValue(p.nombre);
+          mapaSheet.getRange(rightRow, 5, 1, 2).setBackground('#f5f0eb');
+          var estado = confLabel(p.confirmado);
+          mapaSheet.getRange(rightRow, 7).setValue(estado.text);
+          mapaSheet.getRange(rightRow, 7).setBackground(estado.color).setFontSize(9).setHorizontalAlignment('center');
         } else {
+          mapaSheet.getRange(rightRow, 5, 1, 3).merge();
           mapaSheet.getRange(rightRow, 5).setValue('- vac\u00edo -');
           mapaSheet.getRange(rightRow, 5).setFontColor('#cccccc').setHorizontalAlignment('center');
         }
