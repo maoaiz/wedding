@@ -136,6 +136,51 @@
       margin-bottom: 1.5rem;
     }
 
+    /* Countdown */
+    .countdown-label {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: var(--taupe);
+      margin-bottom: 0.5rem;
+    }
+
+    .countdown {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 1.2rem;
+    }
+
+    .countdown-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 1rem;
+    }
+
+    .countdown-item:not(:last-child) {
+      border-right: 1px solid var(--taupe-light);
+    }
+
+    .countdown-number {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 6vw, 2.5rem);
+      font-weight: 400;
+      color: var(--taupe);
+      line-height: 1;
+    }
+
+    .countdown-unit {
+      font-family: 'Lato', sans-serif;
+      font-weight: 300;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      color: var(--taupe-light);
+      margin-top: 0.2rem;
+    }
+
     .upcoming-details {
       font-family: 'Playfair Display', serif;
       font-style: italic;
@@ -359,6 +404,26 @@
 
     <p class="message-secondary">Acomp&aacute;&ntilde;anos a celebrar el sacramento del matrimonio.</p>
 
+    <p class="countdown-label">Faltan</p>
+    <div class="countdown" id="countdown">
+      <div class="countdown-item">
+        <span class="countdown-number" id="cd-days">--</span>
+        <span class="countdown-unit">d&iacute;as</span>
+      </div>
+      <div class="countdown-item">
+        <span class="countdown-number" id="cd-hours">--</span>
+        <span class="countdown-unit">hrs</span>
+      </div>
+      <div class="countdown-item">
+        <span class="countdown-number" id="cd-mins">--</span>
+        <span class="countdown-unit">min</span>
+      </div>
+      <div class="countdown-item">
+        <span class="countdown-number" id="cd-secs">--</span>
+        <span class="countdown-unit">seg</span>
+      </div>
+    </div>
+
     <p class="upcoming-details">Muy pronto te compartiremos el lugar, la hora, c&oacute;mo vestir y todos los detalles.</p>
 
     <div class="actions">
@@ -529,6 +594,31 @@
     } else {
       rsvpLink.href = 'rsvp.html';
     }
+
+    // Countdown to June 6, 2026 3:00 PM Colombia time (UTC-5)
+    function updateCountdown() {
+      var wedding = new Date('2026-06-06T15:00:00-05:00').getTime();
+      var now = new Date().getTime();
+      var diff = wedding - now;
+
+      if (diff <= 0) {
+        document.getElementById('countdown').innerHTML = '<p style="font-family:Playfair Display,serif;font-size:1.2rem;">El gran d\u00eda ha llegado!</p>';
+        return;
+      }
+
+      var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      var mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      var secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+      document.getElementById('cd-days').textContent = days;
+      document.getElementById('cd-hours').textContent = hours;
+      document.getElementById('cd-mins').textContent = mins;
+      document.getElementById('cd-secs').textContent = secs;
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
 
   </script>
 
