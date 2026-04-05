@@ -19,6 +19,7 @@
       --white: #FFFFFF;
       --green: #6b8f71;
       --red-soft: #c47a7a;
+      --yellow-soft: #c4a94a;
     }
 
     body {
@@ -40,7 +41,7 @@
     /* Header */
     .header {
       text-align: center;
-      margin-bottom: 1.5rem;
+      margin-bottom: 0.5rem;
     }
 
     .header .names {
@@ -64,24 +65,35 @@
       color: var(--taupe-light);
     }
 
+    .welcome-msg {
+      text-align: center;
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1rem;
+      line-height: 1.5;
+      margin-bottom: 0.3rem;
+      padding: 0 0.5rem;
+    }
+
     .family-name {
       font-family: 'Playfair Display', serif;
       font-size: 1.3rem;
-      font-weight: 400;
+      font-weight: 600;
       text-align: center;
-      margin-bottom: 0.3rem;
+      margin-bottom: 0.5rem;
     }
 
     .family-hint {
       text-align: center;
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       color: var(--taupe-light);
       margin-bottom: 1.5rem;
+      line-height: 1.4;
     }
 
     .already-responded {
       text-align: center;
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       color: var(--green);
       margin-bottom: 1rem;
       font-style: italic;
@@ -122,18 +134,18 @@
     /* Attendance toggle */
     .attendance {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.4rem;
       margin-bottom: 1rem;
     }
 
     .attendance-btn {
       flex: 1;
-      padding: 0.7rem;
+      padding: 0.65rem 0.3rem;
       border: 1.5px solid var(--taupe-light);
       border-radius: 12px;
       background: transparent;
       font-family: 'Lato', sans-serif;
-      font-size: 0.85rem;
+      font-size: 0.78rem;
       font-weight: 400;
       color: var(--taupe);
       cursor: pointer;
@@ -150,6 +162,12 @@
     .attendance-btn.no.selected {
       background: var(--red-soft);
       border-color: var(--red-soft);
+      color: var(--white);
+    }
+
+    .attendance-btn.maybe.selected {
+      background: var(--yellow-soft);
+      border-color: var(--yellow-soft);
       color: var(--white);
     }
 
@@ -173,7 +191,7 @@
     .menu-options {
       display: flex;
       gap: 0.4rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.8rem;
       flex-wrap: wrap;
     }
 
@@ -193,6 +211,26 @@
       background: var(--taupe);
       border-color: var(--taupe);
       color: var(--white);
+    }
+
+    .notes-toggle {
+      font-size: 0.7rem;
+      color: var(--taupe-light);
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: 'Lato', sans-serif;
+      text-decoration: underline;
+      padding: 0;
+    }
+
+    .notes-area {
+      display: none;
+      margin-top: 0.5rem;
+    }
+
+    .notes-area.visible {
+      display: block;
     }
 
     .notes-input {
@@ -386,7 +424,7 @@
   <div class="container">
     <div class="header">
       <h1 class="names">Eyla <span class="amp">&</span> Mauricio</h1>
-      <p class="subtitle">Confirmacion de asistencia</p>
+      <p class="subtitle">6 de junio de 2026</p>
     </div>
 
     <!-- Loading -->
@@ -398,9 +436,9 @@
     <!-- Error -->
     <div id="errorState" style="display:none">
       <div class="error-state">
-        <h2>No encontramos tu invitacion</h2>
-        <p>Verifica que el enlace sea correcto o contactanos directamente.</p>
-        <a href="https://wa.me/57XXXXXXXXXX" class="btn-whatsapp">
+        <h2>Ups! No encontramos tu invitacion</h2>
+        <p>Parece que el enlace no es correcto. Si crees que es un error, escribenos y lo solucionamos.</p>
+        <a href="https://wa.me/573166643721" class="btn-whatsapp">
           Escribenos por WhatsApp
         </a>
       </div>
@@ -408,9 +446,10 @@
 
     <!-- RSVP Form -->
     <div id="rsvpForm" style="display:none">
+      <p class="welcome-msg">Que alegria que estes aqui,</p>
       <h2 class="family-name" id="familyName"></h2>
-      <p class="family-hint">Por favor confirma la asistencia de cada persona antes del 6 de mayo</p>
-      <p class="already-responded" id="alreadyResponded" style="display:none">Ya confirmaste anteriormente. Puedes hacer cambios si lo necesitas.</p>
+      <p class="family-hint">Nos encantaria contar contigo el 6 de junio. Cuentanos si podras acompanarnos y asi preparamos todo para recibirte como mereces.</p>
+      <p class="already-responded" id="alreadyResponded" style="display:none">Ya nos confirmaste antes, pero tranquilo, puedes cambiar tu respuesta cuando quieras.</p>
 
       <div id="guestList"></div>
 
@@ -421,17 +460,17 @@
       <!-- Success -->
       <div class="success-msg" id="successMsg">
         <div class="check">&#10003;</div>
-        <p>Gracias por confirmar!</p>
-        <p class="sub">Puedes volver a este enlace si necesitas hacer cambios.</p>
+        <p>Gracias! Ya quedo guardado.</p>
+        <p class="sub">Si algo cambia, puedes volver a este enlace y actualizar tu respuesta.</p>
       </div>
     </div>
 
-    <p class="footer">Eyla & Mauricio &middot; 6 de junio de 2026</p>
+    <p class="footer">Eyla & Mauricio &middot; 2026</p>
   </div>
 
   <script>
     // =============================================
-    // CONFIG: Replace with your Apps Script URL
+    // CONFIG
     // =============================================
     const API_URL = 'https://script.google.com/macros/s/AKfycbz2WItvL-OdBbyvhYPTd24EkJh3p_8JkeFcPvpN3uzmZ0eGIpMDg40YER6DAJ8sHaCN/exec';
 
@@ -464,9 +503,7 @@
       }
     }
 
-    // Apps Script returns a 302 redirect which breaks fetch CORS.
-    // Use a script tag (JSONP-style) via the callback parameter workaround,
-    // or simply follow the redirect manually.
+    // JSONP to avoid CORS issues with Apps Script redirects
     function appsScriptGet(params) {
       return new Promise((resolve, reject) => {
         const qs = Object.entries(params).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&');
@@ -493,7 +530,9 @@
       document.getElementById('familyName').textContent = data.familia;
 
       // Check if already responded
-      const hasResponded = data.miembros.some(m => m.confirmado === true || m.confirmado === false);
+      const hasResponded = data.miembros.some(m =>
+        m.confirmado === true || m.confirmado === false || m.confirmado === 'tal_vez'
+      );
       if (hasResponded) {
         document.getElementById('alreadyResponded').style.display = 'block';
       }
@@ -510,6 +549,8 @@
         const defaultMenu = isChild ? 'infantil' : 'normal';
         const currentMenu = member.menu || defaultMenu;
         const confirmed = member.confirmado;
+        const showOptions = confirmed === true || confirmed === 'tal_vez';
+        const hasNotes = member.notas && member.notas.length > 0;
 
         card.innerHTML = `
           <div class="guest-header">
@@ -522,13 +563,17 @@
                     onclick="setAttendance(${i}, true)">
               Si, asiste
             </button>
+            <button class="attendance-btn maybe ${confirmed === 'tal_vez' ? 'selected' : ''}"
+                    onclick="setAttendance(${i}, 'tal_vez')">
+              Aun no se
+            </button>
             <button class="attendance-btn no ${confirmed === false ? 'selected' : ''}"
                     onclick="setAttendance(${i}, false)">
               No puede
             </button>
           </div>
 
-          <div class="guest-options ${confirmed === true ? 'visible' : ''}" id="options-${i}">
+          <div class="guest-options ${showOptions ? 'visible' : ''}" id="options-${i}">
             <p class="field-label">Tipo de menu</p>
             <div class="menu-options">
               <button class="menu-btn ${currentMenu === 'normal' ? 'selected' : ''}" onclick="setMenu(${i}, 'normal')">Normal</button>
@@ -536,9 +581,11 @@
               <button class="menu-btn ${currentMenu === 'infantil' ? 'selected' : ''}" onclick="setMenu(${i}, 'infantil')">Infantil</button>
             </div>
 
-            <p class="field-label">Notas</p>
-            <textarea class="notes-input" id="notes-${i}" rows="2"
-                      placeholder="Alergias, restricciones u otras notas...">${member.notas || ''}</textarea>
+            <button class="notes-toggle" onclick="toggleNotes(${i})">Quieres dejarnos una nota?</button>
+            <div class="notes-area ${hasNotes ? 'visible' : ''}" id="notes-area-${i}">
+              <textarea class="notes-input" id="notes-${i}" rows="2"
+                        placeholder="Alergias, restricciones u otra cosa que debamos saber...">${member.notas || ''}</textarea>
+            </div>
           </div>
         `;
 
@@ -546,18 +593,20 @@
       });
     }
 
-    function setAttendance(index, attending) {
-      familyData.miembros[index].confirmado = attending;
+    function setAttendance(index, value) {
+      familyData.miembros[index].confirmado = value;
 
       const card = document.querySelector(`[data-index="${index}"]`);
       const yesBtn = card.querySelector('.attendance-btn.yes');
+      const maybeBtn = card.querySelector('.attendance-btn.maybe');
       const noBtn = card.querySelector('.attendance-btn.no');
       const options = document.getElementById(`options-${index}`);
 
-      yesBtn.classList.toggle('selected', attending);
-      noBtn.classList.toggle('selected', !attending);
+      yesBtn.classList.toggle('selected', value === true);
+      maybeBtn.classList.toggle('selected', value === 'tal_vez');
+      noBtn.classList.toggle('selected', value === false);
 
-      if (attending) {
+      if (value === true || value === 'tal_vez') {
         options.classList.add('visible');
       } else {
         options.classList.remove('visible');
@@ -573,6 +622,14 @@
       });
     }
 
+    function toggleNotes(index) {
+      const area = document.getElementById(`notes-area-${index}`);
+      area.classList.toggle('visible');
+      if (area.classList.contains('visible')) {
+        area.querySelector('textarea').focus();
+      }
+    }
+
     async function saveRsvp() {
       const btn = document.getElementById('btnSave');
       btn.disabled = true;
@@ -583,7 +640,7 @@
       const responses = familyData.miembros.map((m, i) => ({
         row: m.row,
         confirmado: m.confirmado,
-        menu: m.confirmado ? (m.menu || 'normal') : '',
+        menu: (m.confirmado === true || m.confirmado === 'tal_vez') ? (m.menu || 'normal') : '',
         notas: document.getElementById(`notes-${i}`)?.value || ''
       }));
 

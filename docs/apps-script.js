@@ -10,61 +10,84 @@
 //    - Who has access: Anyone
 // 5. Copy the deployment URL and paste it in rsvp.html
 //
-// Sheet columns (Invitados tab):
-// First Name | Last Name | Tags | Phone | Group | code | es_nino | confirmado | menu | notas | actualizado
+// Columnas del tab "Invitados":
+// Nombre | Apellido | Etiqueta | Telefono | Grupo | codigo | es_nino | confirmado | menu | notas | actualizado | visitas
 
-const SHEET_NAME = 'Invitados';
+var SHEET_NAME = 'Invitados';
 
-// GET endpoint: fetch family data by code
-// Supports JSONP via ?callback=functionName to avoid CORS issues
+// GET endpoint
 function doGet(e) {
-  const code = (e.parameter.code || '').trim().toLowerCase();
-  const callback = e.parameter.callback || '';
-  const action = e.parameter.action || 'get';
+  var code = (e.parameter.code || '').trim().toLowerCase();
+  var callback = e.parameter.callback || '';
+  var action = e.parameter.action || 'get';
 
   if (!code) {
     return respondGet({ error: 'no_code' }, callback);
   }
 
-  // Handle save action via GET (to avoid CORS issues with POST)
+  // Save action
   if (action === 'save') {
     try {
-      const responses = JSON.parse(e.parameter.data || '[]');
+      var responses = JSON.parse(e.parameter.data || '[]');
       return respondGet(saveResponses(code, responses), callback);
     } catch (err) {
       return respondGet({ error: err.message }, callback);
     }
   }
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME);
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
+  // Get family data
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
 
-  const col = {};
-  headers.forEach((h, i) => col[h] = i);
+  var col = {};
+  headers.forEach(function(h, i) { col[h] = i; });
 
-  const members = [];
-  let groupName = '';
+  var members = [];
+  var groupName = '';
+  var visitRows = [];
 
-  for (let i = 1; i < data.length; i++) {
-    const row = data[i];
-    if (String(row[col['code']]).trim().toLowerCase() === code) {
-      groupName = row[col['Group']];
-      const esNino = String(row[col['es_nino']]).trim().toLowerCase() === 'si';
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    if (String(row[col['codigo']]).trim().toLowerCase() === code) {
+      groupName = row[col['Grupo']];
+      var esNino = String(row[col['es_nino']]).trim().toLowerCase() === 'si';
+      var confirmado = row[col['confirmado']];
+
+      // Parse confirmado values
+      if (confirmado === true || String(confirmado).toLowerCase() === 'si' || String(confirmado).toLowerCase() === 'true') {
+        confirmado = true;
+      } else if (confirmado === false || String(confirmado).toLowerCase() === 'no' || String(confirmado).toLowerCase() === 'false') {
+        confirmado = false;
+      } else if (String(confirmado).toLowerCase() === 'tal_vez') {
+        confirmado = 'tal_vez';
+      } else {
+        confirmado = '';
+      }
+
       members.push({
         row: i + 1,
-        nombre: (row[col['First Name']] + ' ' + row[col['Last Name']]).trim(),
+        nombre: (row[col['Nombre']] + ' ' + row[col['Apellido']]).trim(),
         es_nino: esNino,
-        confirmado: row[col['confirmado']],
+        confirmado: confirmado,
         menu: row[col['menu']] || '',
         notas: row[col['notas']] || ''
       });
+      visitRows.push(i + 1);
     }
   }
 
   if (members.length === 0) {
     return respondGet({ error: 'not_found' }, callback);
+  }
+
+  // Increment visit counter
+  if (col['visitas'] !== undefined) {
+    visitRows.forEach(function(rowNum) {
+      var currentVisits = Number(data[rowNum - 1][col['visitas']]) || 0;
+      sheet.getRange(rowNum, col['visitas'] + 1).setValue(currentVisits + 1);
+    });
   }
 
   return respondGet({
@@ -76,34 +99,40 @@ function doGet(e) {
 // Return JSONP if callback is provided, otherwise plain JSON
 function respondGet(data, callback) {
   if (callback) {
-    const js = callback + '(' + JSON.stringify(data) + ')';
+    var js = callback + '(' + JSON.stringify(data) + ')';
     return ContentService.createTextOutput(js).setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
   return jsonResponse(data);
 }
 
-// Save responses (used by both GET?action=save and POST)
+// Save responses
 function saveResponses(code, responses) {
   if (!code || responses.length === 0) {
     return { error: 'invalid_data' };
   }
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME);
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
 
-  const col = {};
-  headers.forEach((h, i) => col[h] = i);
+  var col = {};
+  headers.forEach(function(h, i) { col[h] = i; });
 
-  const now = new Date().toISOString();
+  var now = new Date().toISOString();
 
-  responses.forEach(resp => {
-    const rowNum = resp.row;
+  responses.forEach(function(resp) {
+    var rowNum = resp.row;
     if (rowNum && rowNum > 1 && rowNum <= data.length) {
-      const rowCode = String(data[rowNum - 1][col['code']]).trim().toLowerCase();
+      var rowCode = String(data[rowNum - 1][col['codigo']]).trim().toLowerCase();
       if (rowCode === code) {
-        sheet.getRange(rowNum, col['confirmado'] + 1).setValue(resp.confirmado);
+        // Store confirmado as: si / no / tal_vez
+        var confirmadoVal = '';
+        if (resp.confirmado === true) confirmadoVal = 'si';
+        else if (resp.confirmado === false) confirmadoVal = 'no';
+        else if (resp.confirmado === 'tal_vez') confirmadoVal = 'tal_vez';
+
+        sheet.getRange(rowNum, col['confirmado'] + 1).setValue(confirmadoVal);
         sheet.getRange(rowNum, col['menu'] + 1).setValue(resp.menu || '');
         sheet.getRange(rowNum, col['notas'] + 1).setValue(resp.notas || '');
         sheet.getRange(rowNum, col['actualizado'] + 1).setValue(now);
@@ -114,59 +143,59 @@ function saveResponses(code, responses) {
   return { success: true };
 }
 
-// POST endpoint (fallback, may have CORS issues)
+// POST endpoint (fallback)
 function doPost(e) {
   try {
-    const body = JSON.parse(e.postData.contents);
-    const code = (body.code || '').trim().toLowerCase();
+    var body = JSON.parse(e.postData.contents);
+    var code = (body.code || '').trim().toLowerCase();
     return jsonResponse(saveResponses(code, body.responses || []));
   } catch (err) {
     return jsonResponse({ error: err.message });
   }
 }
 
-// Generate unique codes per Group
+// Generate unique codes per Grupo
 function generateCodes() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME);
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
 
-  const col = {};
-  headers.forEach((h, i) => col[h] = i);
+  var col = {};
+  headers.forEach(function(h, i) { col[h] = i; });
 
-  const codeCol = col['code'];
-  const groupCol = col['Group'];
+  var codeCol = col['codigo'];
+  var groupCol = col['Grupo'];
 
-  const existingCodes = new Set();
-  const groupCodes = {};
+  var existingCodes = {};
+  var groupCodes = {};
 
   // Collect existing codes
-  for (let i = 1; i < data.length; i++) {
-    const code = String(data[i][codeCol]).trim();
-    const group = String(data[i][groupCol]).trim();
+  for (var i = 1; i < data.length; i++) {
+    var code = String(data[i][codeCol]).trim();
+    var group = String(data[i][groupCol]).trim();
     if (code && code !== '' && code !== 'undefined') {
-      existingCodes.add(code);
+      existingCodes[code] = true;
       groupCodes[group] = code;
     }
   }
 
   // Assign codes to groups without one
-  let generated = 0;
-  for (let i = 1; i < data.length; i++) {
-    const code = String(data[i][codeCol]).trim();
-    const group = String(data[i][groupCol]).trim();
+  var generated = 0;
+  for (var i = 1; i < data.length; i++) {
+    var code = String(data[i][codeCol]).trim();
+    var group = String(data[i][groupCol]).trim();
 
     if (!code || code === '' || code === 'undefined') {
       if (groupCodes[group]) {
         sheet.getRange(i + 1, codeCol + 1).setValue(groupCodes[group]);
       } else {
-        let newCode;
+        var newCode;
         do {
           newCode = randomCode(6);
-        } while (existingCodes.has(newCode));
+        } while (existingCodes[newCode]);
 
-        existingCodes.add(newCode);
+        existingCodes[newCode] = true;
         groupCodes[group] = newCode;
         sheet.getRange(i + 1, codeCol + 1).setValue(newCode);
         generated++;
@@ -180,37 +209,34 @@ function generateCodes() {
   );
 }
 
-// Generate WhatsApp links per group
-// Creates a "Mensajes" tab with: Group | Phone | Code | URL | WhatsApp Link | Message
+// Generate WhatsApp messages
 function generateWhatsAppMessages() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME);
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
 
-  const col = {};
-  headers.forEach((h, i) => col[h] = i);
+  var col = {};
+  headers.forEach(function(h, i) { col[h] = i; });
 
-  const baseUrl = 'https://maoaiz.github.io/wedding/rsvp.html?code=';
-  const groups = {};
+  var baseUrl = 'https://maoaiz.github.io/wedding/rsvp.html?code=';
+  var groups = {};
 
-  // Collect unique groups with their code and phone
-  for (let i = 1; i < data.length; i++) {
-    const group = String(data[i][col['Group']]).trim();
-    const code = String(data[i][col['code']]).trim();
-    const phone = String(data[i][col['Phone']]).trim();
+  for (var i = 1; i < data.length; i++) {
+    var group = String(data[i][col['Grupo']]).trim();
+    var code = String(data[i][col['codigo']]).trim();
+    var phone = String(data[i][col['Telefono']]).trim();
 
     if (group && !groups[group]) {
       groups[group] = { code: code, phone: phone };
     }
-    // If a row has a phone, use it (some rows might have it, others not)
     if (phone && phone !== '' && phone !== 'undefined') {
       groups[group].phone = phone;
     }
   }
 
   // Create or clear Mensajes tab
-  let msgSheet = ss.getSheetByName('Mensajes');
+  var msgSheet = ss.getSheetByName('Mensajes');
   if (!msgSheet) {
     msgSheet = ss.insertSheet('Mensajes');
   } else {
@@ -219,53 +245,54 @@ function generateWhatsAppMessages() {
 
   // Headers
   msgSheet.getRange(1, 1, 1, 6).setValues([[
-    'Group', 'Phone', 'Code', 'RSVP URL', 'WhatsApp Link', 'Mensaje'
+    'Grupo', 'Telefono', 'Codigo', 'Enlace RSVP', 'Enlace WhatsApp', 'Mensaje'
   ]]);
 
   // Data rows
-  const entries = Object.entries(groups);
-  entries.forEach((entry, i) => {
-    const group = entry[0];
-    const info = entry[1];
-    const url = baseUrl + info.code;
-    const message = 'Hola ' + group + '! Estan invitados a nuestra boda el 6 de junio de 2026. Confirma tu asistencia aqui: ' + url;
-    const encodedMsg = encodeURIComponent(message);
-    const phone = info.phone || '';
-    const waLink = phone ? 'https://wa.me/' + phone.replace(/[^0-9]/g, '') + '?text=' + encodedMsg : '';
+  var entries = Object.entries(groups);
+  entries.forEach(function(entry, i) {
+    var group = entry[0];
+    var info = entry[1];
+    var url = baseUrl + info.code;
+    var message = 'Hola ' + group + '! Queremos compartir contigo una noticia que nos llena de alegria: nos casamos! ' +
+      'Nos encantaria que nos acompanaras en este dia tan especial. ' +
+      'Confirma tu asistencia aqui: ' + url + ' ' +
+      'Un abrazo, Eyla y Mauricio';
+    var encodedMsg = encodeURIComponent(message);
+    var phone = info.phone || '';
+    var waLink = phone ? 'https://wa.me/' + phone.replace(/[^0-9]/g, '') + '?text=' + encodedMsg : '';
 
     msgSheet.getRange(i + 2, 1, 1, 6).setValues([[
       group, phone, info.code, url, waLink, message
     ]]);
   });
 
-  // Auto-resize columns
   msgSheet.autoResizeColumns(1, 6);
 
   SpreadsheetApp.getUi().alert(
     'Mensajes generados: ' + entries.length + ' grupos.\n' +
-    'Revisa la pestana "Mensajes".\n\n' +
-    'Los grupos con telefono tendran un enlace de WhatsApp directo.'
+    'Revisa la pestana "Mensajes".'
   );
 }
 
-// Utility: generate random alphanumeric code
+// Utility: random code
 function randomCode(length) {
-  const chars = 'abcdefghjkmnpqrstuvwxyz23456789'; // no ambiguous chars
-  let code = '';
-  for (let i = 0; i < length; i++) {
+  var chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+  var code = '';
+  for (var i = 0; i < length; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
 }
 
-// Utility: return JSON response
+// Utility: JSON response
 function jsonResponse(data) {
   return ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// Add custom menu
+// Menu
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('RSVP')
