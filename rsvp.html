@@ -485,6 +485,10 @@
       </div>
     </div>
 
+    <div style="text-align:center; margin-top:1.5rem;">
+      <a href="#" id="backToHomeFooter" class="back-link">Ver nuestra invitaci&oacute;n</a>
+    </div>
+
     <p class="footer">Eyla & Mauricio &middot; 2026</p>
   </div>
 
@@ -699,12 +703,12 @@
       document.getElementById('errorState').style.display = 'block';
     }
 
-    // Back to home link
+    // Back to home links
     const codeParam = new URLSearchParams(window.location.search).get('code');
-    const backLink = document.getElementById('backToHome');
-    if (backLink) {
-      backLink.href = codeParam ? 'index.html?code=' + encodeURIComponent(codeParam) : 'index.html';
-    }
+    const homeUrl = codeParam ? 'index.html?code=' + encodeURIComponent(codeParam) : 'index.html';
+    document.querySelectorAll('#backToHome, #backToHomeFooter').forEach(function(el) {
+      if (el) el.href = homeUrl;
+    });
 
     // Petals effect
     function initPetals() {

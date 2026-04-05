@@ -255,7 +255,7 @@ function generateWhatsAppMessages() {
     var info = entry[1];
     var url = baseUrl + info.code;
     var message = 'Hola ' + group + '! \ud83d\udc8d\n\n' +
-      'Queremos compartir contigo una noticia que nos llena de alegr\u00eda: \u00a1nos casamos! \ud83d\udc69\u200d\u2764\ufe0f\u200d\ud83d\udc8b\u200d\ud83d\udc68\ud83c\udf89\n\n' +
+      'Queremos compartir contigo una noticia que nos llena de alegr\u00eda: \u00a1nos casamos! \ud83d\udc70\ud83e\udd35\ud83c\udf89\n\n' +
       'Nos encantar\u00eda que nos acompa\u00f1aras en este d\u00eda tan especial. \u2764\ufe0f\n\n' +
       'Por favor confirma tu asistencia antes del 6 de mayo \ud83d\udc47\n' + url + '\n\n' +
       'Un abrazo, Eyla y Mauricio \ud83d\ude4f';
