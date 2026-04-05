@@ -69,7 +69,7 @@
       text-align: center;
       font-family: 'Playfair Display', serif;
       font-style: italic;
-      font-size: 1rem;
+      font-size: 1.15rem;
       line-height: 1.5;
       margin-bottom: 0.3rem;
       padding: 0 0.5rem;
@@ -85,7 +85,7 @@
 
     .family-hint {
       text-align: center;
-      font-size: 0.78rem;
+      font-size: 0.9rem;
       color: var(--taupe-light);
       margin-bottom: 1.5rem;
       line-height: 1.4;
@@ -93,7 +93,7 @@
 
     .already-responded {
       text-align: center;
-      font-size: 0.75rem;
+      font-size: 0.85rem;
       color: var(--green);
       margin-bottom: 1rem;
       font-style: italic;
@@ -117,7 +117,7 @@
 
     .guest-name {
       font-family: 'Playfair Display', serif;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       font-weight: 400;
     }
 
@@ -145,7 +145,7 @@
       border-radius: 12px;
       background: transparent;
       font-family: 'Lato', sans-serif;
-      font-size: 0.78rem;
+      font-size: 0.88rem;
       font-weight: 400;
       color: var(--taupe);
       cursor: pointer;
@@ -278,7 +278,7 @@
       background: var(--taupe);
       color: var(--white);
       font-family: 'Lato', sans-serif;
-      font-size: 0.9rem;
+      font-size: 1rem;
       font-weight: 400;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -396,6 +396,16 @@
       letter-spacing: 0.05em;
     }
 
+    .back-link {
+      display: inline-block;
+      margin-top: 1rem;
+      font-family: 'Lato', sans-serif;
+      font-style: normal;
+      font-size: 0.85rem;
+      color: var(--taupe);
+      text-decoration: underline;
+    }
+
     /* Footer */
     .footer {
       text-align: center;
@@ -471,6 +481,7 @@
         <div class="check">&#10003;</div>
         <p>Gracias! Ya qued&oacute; guardado.</p>
         <p class="sub">Si algo cambia, puedes volver a este enlace y actualizar tu respuesta.</p>
+        <a href="#" id="backToHome" class="back-link">Ver nuestra invitaci&oacute;n</a>
       </div>
     </div>
 
@@ -686,6 +697,13 @@
     function showError() {
       document.getElementById('loadingState').style.display = 'none';
       document.getElementById('errorState').style.display = 'block';
+    }
+
+    // Back to home link
+    const codeParam = new URLSearchParams(window.location.search).get('code');
+    const backLink = document.getElementById('backToHome');
+    if (backLink) {
+      backLink.href = codeParam ? 'index.html?code=' + encodeURIComponent(codeParam) : 'index.html';
     }
 
     // Petals effect
