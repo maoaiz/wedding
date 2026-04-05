@@ -786,6 +786,43 @@ function generateMapaMesasRemote() {
 
   for (var c = 1; c <= 8; c++) mapaSheet.setColumnWidth(c, 120);
   mapaSheet.setColumnWidth(4, 30);
+
+  // List of people without table
+  var sinMesa = [];
+  for (var i = 1; i < data.length; i++) {
+    var mesa = String(data[i][col['mesa']]).trim();
+    var nombre = (data[i][col['Nombre']] + ' ' + data[i][col['Apellido']]).trim();
+    var conf = String(data[i][col['confirmado']]).trim().toLowerCase();
+    if (!mesa && nombre) {
+      sinMesa.push({ nombre: nombre, confirmado: conf });
+    }
+  }
+
+  if (sinMesa.length > 0) {
+    currentRow += 2;
+    mapaSheet.getRange(currentRow, 1, 1, 7).merge();
+    mapaSheet.getRange(currentRow, 1).setValue('SIN MESA ASIGNADA (' + sinMesa.length + ')');
+    mapaSheet.getRange(currentRow, 1).setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center');
+    mapaSheet.getRange(currentRow, 1, 1, 7).setBackground('#f4cccc');
+    currentRow++;
+
+    mapaSheet.getRange(currentRow, 1).setValue('Nombre');
+    mapaSheet.getRange(currentRow, 4, 1, 4).merge();
+    mapaSheet.getRange(currentRow, 4).setValue('Estado');
+    mapaSheet.getRange(currentRow, 1, 1, 7).setFontWeight('bold');
+    currentRow++;
+
+    sinMesa.forEach(function(p) {
+      mapaSheet.getRange(currentRow, 1, 1, 3).merge();
+      mapaSheet.getRange(currentRow, 1).setValue(p.nombre);
+      mapaSheet.getRange(currentRow, 4, 1, 4).merge();
+      var estado = p.confirmado === 'si' ? 'Confirmado' : p.confirmado === 'no' ? 'No asiste' : p.confirmado === 'tal_vez' ? 'A\u00fan no sabe' : 'Sin responder';
+      mapaSheet.getRange(currentRow, 4).setValue(estado);
+      if (p.confirmado === 'si') mapaSheet.getRange(currentRow, 4, 1, 4).setBackground('#d9ead3');
+      else if (p.confirmado === 'no') mapaSheet.getRange(currentRow, 4, 1, 4).setBackground('#f4cccc');
+      currentRow++;
+    });
+  }
 }
 
 // Menu
