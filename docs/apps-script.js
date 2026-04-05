@@ -228,9 +228,9 @@ function generateWhatsAppMessages() {
     var phone = String(data[i][col['Telefono']]).trim();
 
     if (group && !groups[group]) {
-      groups[group] = { code: code, phone: phone };
+      groups[group] = { code: code, phone: '' };
     }
-    if (phone && phone !== '' && phone !== 'undefined') {
+    if (!groups[group].phone && phone && phone !== '' && phone !== 'undefined') {
       groups[group].phone = phone;
     }
   }
