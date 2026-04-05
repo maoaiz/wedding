@@ -338,7 +338,7 @@ function createResumen() {
     ['Confirmados (si)', '=COUNTIF(Invitados!' + conf + '2:' + conf + ', "si")'],
     ['No asisten', '=COUNTIF(Invitados!' + conf + '2:' + conf + ', "no")'],
     ['A\u00fan no saben', '=COUNTIF(Invitados!' + conf + '2:' + conf + ', "tal_vez")'],
-    ['Sin responder', '=COUNTBLANK(Invitados!' + conf + '2:' + conf + ')'],
+    ['Sin responder', '=COUNTA(Invitados!' + nombre + '2:' + nombre + ')-COUNTIF(Invitados!' + conf + '2:' + conf + ',"si")-COUNTIF(Invitados!' + conf + '2:' + conf + ',"no")-COUNTIF(Invitados!' + conf + '2:' + conf + ',"tal_vez")'],
     ['', ''],
     ['MENUS', ''],
     ['Normal', '=COUNTIF(Invitados!' + menu + '2:' + menu + ', "normal")'],
