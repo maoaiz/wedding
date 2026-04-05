@@ -254,11 +254,18 @@ function generateWhatsAppMessages() {
     var group = entry[0];
     var info = entry[1];
     var url = baseUrl + info.code;
-    var message = 'Hola ' + group + '! 💍\n\n' +
-      'Queremos compartir contigo una noticia que nos llena de alegría: ¡nos casamos! 👰🤵🎉\n\n' +
-      'Nos encantaría que nos acompañaras en este día tan especial. ❤️\n\n' +
-      'Por favor confirma tu asistencia antes del 6 de mayo 👇\n' + url + '\n\n' +
-      'Un abrazo, Eyla y Mauricio 🙏';
+    var ring = String.fromCodePoint(0x1F48D);
+    var bride = String.fromCodePoint(0x1F470);
+    var groom = String.fromCodePoint(0x1F935);
+    var party = String.fromCodePoint(0x1F389);
+    var heart = String.fromCodePoint(0x2764) + String.fromCodePoint(0xFE0F);
+    var down = String.fromCodePoint(0x1F447);
+    var pray = String.fromCodePoint(0x1F64F);
+    var message = 'Hola ' + group + '! ' + ring + '\n\n' +
+      'Queremos compartir contigo una noticia que nos llena de alegr\u00eda: \u00a1nos casamos! ' + bride + groom + party + '\n\n' +
+      'Nos encantar\u00eda que nos acompa\u00f1aras en este d\u00eda tan especial. ' + heart + '\n\n' +
+      'Por favor confirma tu asistencia antes del 6 de mayo ' + down + '\n' + url + '\n\n' +
+      'Un abrazo, Eyla y Mauricio ' + pray;
     var encodedMsg = encodeURIComponent(message);
     var phone = info.phone || '';
     var waLink = phone ? 'https://wa.me/' + phone.replace(/[^0-9]/g, '') + '?text=' + encodedMsg : '';
