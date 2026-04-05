@@ -626,6 +626,12 @@ function generateMapaMesas() {
   SpreadsheetApp.getUi().alert('Mapa de mesas generado.');
 }
 
+// Wrapper that calls the full version from menu
+function generateMapaMesasMenu() {
+  generateMapaMesasRemote();
+  SpreadsheetApp.getUi().alert('Mapa de mesas generado.');
+}
+
 // Remote versions (no getUi)
 function setupMesasRemote() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -834,6 +840,6 @@ function onOpen() {
     .addItem('Crear Resumen', 'createResumen')
     .addSeparator()
     .addItem('Configurar mesas', 'setupMesas')
-    .addItem('Generar mapa de mesas', 'generateMapaMesas')
+    .addItem('Generar mapa de mesas', 'generateMapaMesasMenu')
     .addToUi();
 }
