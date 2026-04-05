@@ -727,8 +727,8 @@ function generateWhatsAppMessagesRemote() {
   if (!msgSheet) msgSheet = ss.insertSheet('Mensajes');
   else msgSheet.clearContents();
 
-  msgSheet.getRange(1, 1, 1, 3).setValues([['Grupo', 'Invitaci\u00f3n', 'WhatsApp']]);
-  msgSheet.getRange(1, 1, 1, 3).setFontWeight('bold');
+  msgSheet.getRange(1, 1, 1, 2).setValues([['Grupo', 'Invitaci\u00f3n']]);
+  msgSheet.getRange(1, 1, 1, 2).setFontWeight('bold');
 
   var ring = String.fromCodePoint(0x1F48D);
   var bride = String.fromCodePoint(0x1F470);
@@ -753,19 +753,17 @@ function generateWhatsAppMessagesRemote() {
     var waLink = cleanPhone ? 'https://wa.me/' + cleanPhone + '?text=' + encodedMsg : '';
 
     var row = i + 2;
-    msgSheet.getRange(row, 1).setValue(group);
-    msgSheet.getRange(row, 2).setFormula('=HYPERLINK("' + url + '", "Ver invitaci\u00f3n")');
     if (waLink) {
-      msgSheet.getRange(row, 3).setFormula('=HYPERLINK("' + waLink.replace(/"/g, '""') + '", "Enviar")');
+      msgSheet.getRange(row, 1).setFormula('=HYPERLINK("' + waLink.replace(/"/g, '""') + '", "' + group.replace(/"/g, '""') + '")');
     } else {
-      msgSheet.getRange(row, 3).setValue('Sin tel\u00e9fono');
-      msgSheet.getRange(row, 3).setFontColor('#cccccc');
+      msgSheet.getRange(row, 1).setValue(group);
+      msgSheet.getRange(row, 1).setFontColor('#cccccc');
     }
+    msgSheet.getRange(row, 2).setFormula('=HYPERLINK("' + url + '", "Ver invitaci\u00f3n")');
   });
 
-  msgSheet.setColumnWidth(1, 250);
+  msgSheet.setColumnWidth(1, 280);
   msgSheet.setColumnWidth(2, 120);
-  msgSheet.setColumnWidth(3, 100);
 }
 
 function createResumenRemote() {
