@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Confirmar Asistencia - Eyla & Mauricio</title>
+  <meta name="description" content="Confirma tu asistencia a la boda de Eyla y Mauricio.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="effects/petals.css">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --cream: #ECE7DF;
+      --taupe: #766865;
+      --taupe-light: #9a8e8b;
+      --white: #FFFFFF;
+      --green: #6b8f71;
+      --red-soft: #c47a7a;
+    }
+
+    body {
+      font-family: 'Lato', sans-serif;
+      background-color: var(--cream);
+      color: var(--taupe);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .header .names {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 400;
+      margin-bottom: 0.3rem;
+    }
+
+    .header .names .amp {
+      font-style: italic;
+      font-size: 0.75em;
+      margin: 0 0.1em;
+    }
+
+    .header .subtitle {
+      font-weight: 300;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--taupe-light);
+    }
+
+    .family-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 400;
+      text-align: center;
+      margin-bottom: 0.3rem;
+    }
+
+    .family-hint {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--taupe-light);
+      margin-bottom: 1.5rem;
+    }
+
+    .already-responded {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--green);
+      margin-bottom: 1rem;
+      font-style: italic;
+    }
+
+    /* Guest cards */
+    .guest-card {
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(6px);
+      border-radius: 16px;
+      padding: 1.2rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .guest-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .guest-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 400;
+    }
+
+    .badge-child {
+      font-size: 0.6rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(118, 104, 101, 0.1);
+      color: var(--taupe-light);
+      padding: 0.2rem 0.5rem;
+      border-radius: 20px;
+    }
+
+    /* Attendance toggle */
+    .attendance {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .attendance-btn {
+      flex: 1;
+      padding: 0.7rem;
+      border: 1.5px solid var(--taupe-light);
+      border-radius: 12px;
+      background: transparent;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: var(--taupe);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-align: center;
+    }
+
+    .attendance-btn.yes.selected {
+      background: var(--green);
+      border-color: var(--green);
+      color: var(--white);
+    }
+
+    .attendance-btn.no.selected {
+      background: var(--red-soft);
+      border-color: var(--red-soft);
+      color: var(--white);
+    }
+
+    /* Options (shown when attending) */
+    .guest-options {
+      display: none;
+    }
+
+    .guest-options.visible {
+      display: block;
+    }
+
+    .field-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--taupe-light);
+      margin-bottom: 0.4rem;
+    }
+
+    .menu-options {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .menu-btn {
+      padding: 0.5rem 0.8rem;
+      border: 1px solid var(--taupe-light);
+      border-radius: 20px;
+      background: transparent;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.75rem;
+      color: var(--taupe);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .menu-btn.selected {
+      background: var(--taupe);
+      border-color: var(--taupe);
+      color: var(--white);
+    }
+
+    .notes-input {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid rgba(154, 142, 139, 0.3);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.5);
+      font-family: 'Lato', sans-serif;
+      font-size: 0.8rem;
+      color: var(--taupe);
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .notes-input:focus {
+      border-color: var(--taupe-light);
+    }
+
+    .notes-input::placeholder {
+      color: var(--taupe-light);
+      opacity: 0.6;
+    }
+
+    /* Save button */
+    .save-section {
+      margin-top: 1.5rem;
+      text-align: center;
+    }
+
+    .btn-save {
+      width: 100%;
+      padding: 1rem;
+      border: none;
+      border-radius: 100px;
+      background: var(--taupe);
+      color: var(--white);
+      font-family: 'Lato', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-save:hover {
+      background: #5e5350;
+    }
+
+    .btn-save:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-save.saving {
+      opacity: 0.7;
+    }
+
+    /* Success message */
+    .success-msg {
+      display: none;
+      text-align: center;
+      padding: 1.5rem;
+    }
+
+    .success-msg.visible {
+      display: block;
+      animation: fadeUp 0.5s ease;
+    }
+
+    .success-msg .check {
+      font-size: 3rem;
+      margin-bottom: 0.8rem;
+      animation: popIn 0.4s ease 0.2s both;
+    }
+
+    .success-msg p {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .success-msg .sub {
+      font-family: 'Lato', sans-serif;
+      font-style: normal;
+      font-size: 0.75rem;
+      color: var(--taupe-light);
+      margin-top: 0.5rem;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Loading state */
+    .loading {
+      text-align: center;
+      padding: 4rem 1rem;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 2px solid rgba(118, 104, 101, 0.15);
+      border-top-color: var(--taupe);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading p {
+      font-size: 0.85rem;
+      color: var(--taupe-light);
+    }
+
+    /* Error state */
+    .error-state {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+
+    .error-state h2 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400;
+      font-size: 1.3rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .error-state p {
+      font-size: 0.85rem;
+      color: var(--taupe-light);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .btn-whatsapp {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.7rem 1.5rem;
+      border-radius: 100px;
+      background: #25d366;
+      color: white;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 400;
+      letter-spacing: 0.05em;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 2rem 0 1rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: var(--taupe-light);
+      opacity: 0.4;
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .guest-card {
+      animation: fadeUp 0.5s ease both;
+    }
+    .guest-card:nth-child(1) { animation-delay: 0.1s; }
+    .guest-card:nth-child(2) { animation-delay: 0.2s; }
+    .guest-card:nth-child(3) { animation-delay: 0.3s; }
+    .guest-card:nth-child(4) { animation-delay: 0.4s; }
+    .guest-card:nth-child(5) { animation-delay: 0.5s; }
+    .guest-card:nth-child(6) { animation-delay: 0.6s; }
+    .guest-card:nth-child(7) { animation-delay: 0.7s; }
+    .guest-card:nth-child(8) { animation-delay: 0.8s; }
+  </style>
+</head>
+<body>
+
+  <div class="effect-container" id="effectContainer"></div>
+
+  <div class="container">
+    <div class="header">
+      <h1 class="names">Eyla <span class="amp">&</span> Mauricio</h1>
+      <p class="subtitle">Confirmacion de asistencia</p>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingState" class="loading">
+      <div class="spinner"></div>
+      <p>Cargando tu invitacion...</p>
+    </div>
+
+    <!-- Error -->
+    <div id="errorState" style="display:none">
+      <div class="error-state">
+        <h2>No encontramos tu invitacion</h2>
+        <p>Verifica que el enlace sea correcto o contactanos directamente.</p>
+        <a href="https://wa.me/57XXXXXXXXXX" class="btn-whatsapp">
+          Escribenos por WhatsApp
+        </a>
+      </div>
+    </div>
+
+    <!-- RSVP Form -->
+    <div id="rsvpForm" style="display:none">
+      <h2 class="family-name" id="familyName"></h2>
+      <p class="family-hint">Por favor confirma la asistencia de cada persona antes del 6 de mayo</p>
+      <p class="already-responded" id="alreadyResponded" style="display:none">Ya confirmaste anteriormente. Puedes hacer cambios si lo necesitas.</p>
+
+      <div id="guestList"></div>
+
+      <div class="save-section">
+        <button class="btn-save" id="btnSave" onclick="saveRsvp()">Guardar</button>
+      </div>
+
+      <!-- Success -->
+      <div class="success-msg" id="successMsg">
+        <div class="check">&#10003;</div>
+        <p>Gracias por confirmar!</p>
+        <p class="sub">Puedes volver a este enlace si necesitas hacer cambios.</p>
+      </div>
+    </div>
+
+    <p class="footer">Eyla & Mauricio &middot; 6 de junio de 2026</p>
+  </div>
+
+  <script>
+    // =============================================
+    // CONFIG: Replace with your Apps Script URL
+    // =============================================
+    const API_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+
+    let familyData = null;
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+      initPetals();
+      const code = new URLSearchParams(window.location.search).get('code');
+      if (!code) {
+        showError();
+        return;
+      }
+      loadFamily(code);
+    });
+
+    async function loadFamily(code) {
+      try {
+        const res = await fetch(`${API_URL}?code=${encodeURIComponent(code)}`);
+        const data = await res.json();
+
+        if (data.error) {
+          showError();
+          return;
+        }
+
+        familyData = data;
+        renderForm(data);
+      } catch (err) {
+        showError();
+      }
+    }
+
+    function renderForm(data) {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('rsvpForm').style.display = 'block';
+      document.getElementById('familyName').textContent = data.familia;
+
+      // Check if already responded
+      const hasResponded = data.miembros.some(m => m.confirmado === true || m.confirmado === false);
+      if (hasResponded) {
+        document.getElementById('alreadyResponded').style.display = 'block';
+      }
+
+      const list = document.getElementById('guestList');
+      list.innerHTML = '';
+
+      data.miembros.forEach((member, i) => {
+        const card = document.createElement('div');
+        card.className = 'guest-card';
+        card.dataset.index = i;
+
+        const isChild = member.es_nino;
+        const defaultMenu = isChild ? 'infantil' : 'normal';
+        const currentMenu = member.menu || defaultMenu;
+        const confirmed = member.confirmado;
+
+        card.innerHTML = `
+          <div class="guest-header">
+            <span class="guest-name">${member.nombre}</span>
+            ${isChild ? '<span class="badge-child">Nino</span>' : ''}
+          </div>
+
+          <div class="attendance">
+            <button class="attendance-btn yes ${confirmed === true ? 'selected' : ''}"
+                    onclick="setAttendance(${i}, true)">
+              Si, asiste
+            </button>
+            <button class="attendance-btn no ${confirmed === false ? 'selected' : ''}"
+                    onclick="setAttendance(${i}, false)">
+              No puede
+            </button>
+          </div>
+
+          <div class="guest-options ${confirmed === true ? 'visible' : ''}" id="options-${i}">
+            <p class="field-label">Tipo de menu</p>
+            <div class="menu-options">
+              <button class="menu-btn ${currentMenu === 'normal' ? 'selected' : ''}" onclick="setMenu(${i}, 'normal')">Normal</button>
+              <button class="menu-btn ${currentMenu === 'vegetariano' ? 'selected' : ''}" onclick="setMenu(${i}, 'vegetariano')">Vegetariano</button>
+              <button class="menu-btn ${currentMenu === 'infantil' ? 'selected' : ''}" onclick="setMenu(${i}, 'infantil')">Infantil</button>
+            </div>
+
+            <p class="field-label">Notas</p>
+            <textarea class="notes-input" id="notes-${i}" rows="2"
+                      placeholder="Alergias, restricciones u otras notas...">${member.notas || ''}</textarea>
+          </div>
+        `;
+
+        list.appendChild(card);
+      });
+    }
+
+    function setAttendance(index, attending) {
+      familyData.miembros[index].confirmado = attending;
+
+      const card = document.querySelector(`[data-index="${index}"]`);
+      const yesBtn = card.querySelector('.attendance-btn.yes');
+      const noBtn = card.querySelector('.attendance-btn.no');
+      const options = document.getElementById(`options-${index}`);
+
+      yesBtn.classList.toggle('selected', attending);
+      noBtn.classList.toggle('selected', !attending);
+
+      if (attending) {
+        options.classList.add('visible');
+      } else {
+        options.classList.remove('visible');
+      }
+    }
+
+    function setMenu(index, menu) {
+      familyData.miembros[index].menu = menu;
+
+      const card = document.querySelector(`[data-index="${index}"]`);
+      card.querySelectorAll('.menu-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.textContent.toLowerCase() === menu);
+      });
+    }
+
+    async function saveRsvp() {
+      const btn = document.getElementById('btnSave');
+      btn.disabled = true;
+      btn.classList.add('saving');
+      btn.textContent = 'Guardando...';
+
+      const code = new URLSearchParams(window.location.search).get('code');
+      const responses = familyData.miembros.map((m, i) => ({
+        row: m.row,
+        confirmado: m.confirmado,
+        menu: m.confirmado ? (m.menu || 'normal') : '',
+        notas: document.getElementById(`notes-${i}`)?.value || ''
+      }));
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ code, responses })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          document.getElementById('guestList').style.display = 'none';
+          document.querySelector('.save-section').style.display = 'none';
+          document.querySelector('.family-hint').style.display = 'none';
+          document.getElementById('alreadyResponded').style.display = 'none';
+          document.getElementById('successMsg').classList.add('visible');
+        } else {
+          throw new Error('Save failed');
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.classList.remove('saving');
+        btn.textContent = 'Guardar';
+        alert('Hubo un error al guardar. Intenta de nuevo.');
+      }
+    }
+
+    function showError() {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('errorState').style.display = 'block';
+    }
+
+    // Petals effect
+    function initPetals() {
+      const container = document.getElementById('effectContainer');
+      for (let i = 0; i < 15; i++) {
+        const el = document.createElement('div');
+        el.className = 'petal';
+        el.style.left = Math.random() * 100 + '%';
+        el.style.animationDuration = (8 + Math.random() * 12) + 's';
+        el.style.animationDelay = (Math.random() * 10) + 's';
+        el.style.width = (8 + Math.random() * 8) + 'px';
+        el.style.height = (10 + Math.random() * 10) + 'px';
+        container.appendChild(el);
+      }
+    }
+  </script>
+
+</body>
+</html>
