@@ -9,9 +9,11 @@
 //    - Execute as: Me
 //    - Who has access: Anyone
 // 5. Copy the deployment URL and paste it in rsvp.html
+//
+// Sheet columns (Invitados tab):
+// First Name | Last Name | Tags | Phone | Group | code | es_nino | confirmado | menu | notas | actualizado
 
-const SHEET_NAME_GUESTS = 'Invitados';
-const SHEET_NAME_CODES = 'Codigos';
+const SHEET_NAME = 'Invitados';
 
 // GET endpoint: fetch family data by code
 function doGet(e) {
@@ -22,27 +24,28 @@ function doGet(e) {
   }
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME_GUESTS);
+  const sheet = ss.getSheetByName(SHEET_NAME);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
 
-  const colIndex = {};
-  headers.forEach((h, i) => colIndex[h] = i);
+  const col = {};
+  headers.forEach((h, i) => col[h] = i);
 
   const members = [];
-  let familyName = '';
+  let groupName = '';
 
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    if (String(row[colIndex['code']]).trim().toLowerCase() === code) {
-      familyName = row[colIndex['familia']];
+    if (String(row[col['code']]).trim().toLowerCase() === code) {
+      groupName = row[col['Group']];
+      const esNino = String(row[col['es_nino']]).trim().toLowerCase() === 'si';
       members.push({
-        row: i + 1, // 1-indexed for Sheets
-        nombre: row[colIndex['nombre']],
-        es_nino: row[colIndex['es_nino']] === true || String(row[colIndex['es_nino']]).toLowerCase() === 'true',
-        confirmado: row[colIndex['confirmado']],
-        menu: row[colIndex['menu']] || '',
-        notas: row[colIndex['notas']] || ''
+        row: i + 1,
+        nombre: (row[col['First Name']] + ' ' + row[col['Last Name']]).trim(),
+        es_nino: esNino,
+        confirmado: row[col['confirmado']],
+        menu: row[col['menu']] || '',
+        notas: row[col['notas']] || ''
       });
     }
   }
@@ -52,7 +55,7 @@ function doGet(e) {
   }
 
   return jsonResponse({
-    familia: familyName,
+    familia: groupName,
     miembros: members
   });
 }
@@ -69,25 +72,24 @@ function doPost(e) {
     }
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(SHEET_NAME_GUESTS);
+    const sheet = ss.getSheetByName(SHEET_NAME);
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
 
-    const colIndex = {};
-    headers.forEach((h, i) => colIndex[h] = i);
+    const col = {};
+    headers.forEach((h, i) => col[h] = i);
 
     const now = new Date().toISOString();
 
     responses.forEach(resp => {
       const rowNum = resp.row;
       if (rowNum && rowNum > 1 && rowNum <= data.length) {
-        // Verify the row belongs to the same code
-        const rowCode = String(data[rowNum - 1][colIndex['code']]).trim().toLowerCase();
+        const rowCode = String(data[rowNum - 1][col['code']]).trim().toLowerCase();
         if (rowCode === code) {
-          sheet.getRange(rowNum, colIndex['confirmado'] + 1).setValue(resp.confirmado);
-          sheet.getRange(rowNum, colIndex['menu'] + 1).setValue(resp.menu || '');
-          sheet.getRange(rowNum, colIndex['notas'] + 1).setValue(resp.notas || '');
-          sheet.getRange(rowNum, colIndex['actualizado'] + 1).setValue(now);
+          sheet.getRange(rowNum, col['confirmado'] + 1).setValue(resp.confirmado);
+          sheet.getRange(rowNum, col['menu'] + 1).setValue(resp.menu || '');
+          sheet.getRange(rowNum, col['notas'] + 1).setValue(resp.notas || '');
+          sheet.getRange(rowNum, col['actualizado'] + 1).setValue(now);
         }
       }
     });
@@ -98,104 +100,127 @@ function doPost(e) {
   }
 }
 
-// Generate unique codes for families that don't have one
+// Generate unique codes per Group
 function generateCodes() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME_GUESTS);
+  const sheet = ss.getSheetByName(SHEET_NAME);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
 
-  const colIndex = {};
-  headers.forEach((h, i) => colIndex[h] = i);
+  const col = {};
+  headers.forEach((h, i) => col[h] = i);
 
-  const codeCol = colIndex['code'];
-  const familiaCol = colIndex['familia'];
+  const codeCol = col['code'];
+  const groupCol = col['Group'];
+
+  const existingCodes = new Set();
+  const groupCodes = {};
 
   // Collect existing codes
-  const existingCodes = new Set();
-  const familyCodes = {};
-
   for (let i = 1; i < data.length; i++) {
     const code = String(data[i][codeCol]).trim();
-    const familia = String(data[i][familiaCol]).trim();
+    const group = String(data[i][groupCol]).trim();
     if (code && code !== '' && code !== 'undefined') {
       existingCodes.add(code);
-      familyCodes[familia] = code;
+      groupCodes[group] = code;
     }
   }
 
-  // Assign codes to families without one
+  // Assign codes to groups without one
+  let generated = 0;
   for (let i = 1; i < data.length; i++) {
     const code = String(data[i][codeCol]).trim();
-    const familia = String(data[i][familiaCol]).trim();
+    const group = String(data[i][groupCol]).trim();
 
     if (!code || code === '' || code === 'undefined') {
-      if (familyCodes[familia]) {
-        // Use existing code for this family
-        sheet.getRange(i + 1, codeCol + 1).setValue(familyCodes[familia]);
+      if (groupCodes[group]) {
+        sheet.getRange(i + 1, codeCol + 1).setValue(groupCodes[group]);
       } else {
-        // Generate new code
         let newCode;
         do {
           newCode = randomCode(6);
         } while (existingCodes.has(newCode));
 
         existingCodes.add(newCode);
-        familyCodes[familia] = newCode;
+        groupCodes[group] = newCode;
         sheet.getRange(i + 1, codeCol + 1).setValue(newCode);
+        generated++;
       }
     }
   }
 
-  // Update Codigos tab
-  const codesSheet = ss.getSheetByName(SHEET_NAME_CODES);
-  if (codesSheet) {
-    // Clear existing data (keep headers)
-    const lastRow = codesSheet.getLastRow();
-    if (lastRow > 1) {
-      codesSheet.getRange(2, 1, lastRow - 1, 4).clearContent();
-    }
-
-    // Write codes
-    const families = Object.entries(familyCodes);
-    families.forEach((entry, i) => {
-      codesSheet.getRange(i + 2, 1).setValue(entry[1]); // code
-      codesSheet.getRange(i + 2, 2).setValue(entry[0]); // familia
-      codesSheet.getRange(i + 2, 3).setValue(false);     // enviado
-      codesSheet.getRange(i + 2, 4).setValue('');         // fecha_envio
-    });
-  }
-
-  SpreadsheetApp.getUi().alert('Codigos generados: ' + Object.keys(familyCodes).length + ' familias.');
+  SpreadsheetApp.getUi().alert(
+    'Codigos generados: ' + generated + ' nuevos.\n' +
+    'Total grupos: ' + Object.keys(groupCodes).length
+  );
 }
 
-// Generate WhatsApp messages
+// Generate WhatsApp links per group
+// Creates a "Mensajes" tab with: Group | Phone | Code | URL | WhatsApp Link | Message
 function generateWhatsAppMessages() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const codesSheet = ss.getSheetByName(SHEET_NAME_CODES);
-  const data = codesSheet.getDataRange().getValues();
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+
+  const col = {};
+  headers.forEach((h, i) => col[h] = i);
 
   const baseUrl = 'https://maoaiz.github.io/wedding/rsvp.html?code=';
-  let messages = 'MENSAJES DE WHATSAPP\n\n';
+  const groups = {};
 
+  // Collect unique groups with their code and phone
   for (let i = 1; i < data.length; i++) {
-    const code = data[i][0];
-    const familia = data[i][1];
-    const url = baseUrl + code;
+    const group = String(data[i][col['Group']]).trim();
+    const code = String(data[i][col['code']]).trim();
+    const phone = String(data[i][col['Phone']]).trim();
 
-    messages += '--- ' + familia + ' ---\n';
-    messages += 'Hola ' + familia + '! Estan invitados a nuestra boda el 6 de junio de 2026.\n';
-    messages += 'Confirma tu asistencia aqui: ' + url + '\n\n';
+    if (group && !groups[group]) {
+      groups[group] = { code: code, phone: phone };
+    }
+    // If a row has a phone, use it (some rows might have it, others not)
+    if (phone && phone !== '' && phone !== 'undefined') {
+      groups[group].phone = phone;
+    }
   }
 
-  // Create a new sheet with the messages
+  // Create or clear Mensajes tab
   let msgSheet = ss.getSheetByName('Mensajes');
   if (!msgSheet) {
     msgSheet = ss.insertSheet('Mensajes');
+  } else {
+    msgSheet.clearContents();
   }
-  msgSheet.getRange(1, 1).setValue(messages);
 
-  SpreadsheetApp.getUi().alert('Mensajes generados en la pestaña "Mensajes".');
+  // Headers
+  msgSheet.getRange(1, 1, 1, 6).setValues([[
+    'Group', 'Phone', 'Code', 'RSVP URL', 'WhatsApp Link', 'Mensaje'
+  ]]);
+
+  // Data rows
+  const entries = Object.entries(groups);
+  entries.forEach((entry, i) => {
+    const group = entry[0];
+    const info = entry[1];
+    const url = baseUrl + info.code;
+    const message = 'Hola ' + group + '! Estan invitados a nuestra boda el 6 de junio de 2026. Confirma tu asistencia aqui: ' + url;
+    const encodedMsg = encodeURIComponent(message);
+    const phone = info.phone || '';
+    const waLink = phone ? 'https://wa.me/' + phone.replace(/[^0-9]/g, '') + '?text=' + encodedMsg : '';
+
+    msgSheet.getRange(i + 2, 1, 1, 6).setValues([[
+      group, phone, info.code, url, waLink, message
+    ]]);
+  });
+
+  // Auto-resize columns
+  msgSheet.autoResizeColumns(1, 6);
+
+  SpreadsheetApp.getUi().alert(
+    'Mensajes generados: ' + entries.length + ' grupos.\n' +
+    'Revisa la pestana "Mensajes".\n\n' +
+    'Los grupos con telefono tendran un enlace de WhatsApp directo.'
+  );
 }
 
 // Utility: generate random alphanumeric code
@@ -215,7 +240,7 @@ function jsonResponse(data) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// Add custom menu to the spreadsheet
+// Add custom menu
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('RSVP')
