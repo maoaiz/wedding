@@ -21,16 +21,7 @@ function doGet(e) {
   var callback = e.parameter.callback || '';
   var action = e.parameter.action || 'get';
 
-  // Bulk phone update (no code needed)
-  if (action === 'bulk_phones') {
-    try {
-      return respondGet(bulkUpdatePhones(e.parameter.data || '[]'), callback);
-    } catch (err) {
-      return respondGet({ error: err.message }, callback);
-    }
-  }
-
-  if (!code) {
+if (!code) {
     return respondGet({ error: 'no_code' }, callback);
   }
 
@@ -299,34 +290,6 @@ function jsonResponse(data) {
   return ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
-}
-
-// Bulk update phone numbers (called via GET ?action=bulk_phones&data=JSON)
-function bulkUpdatePhones(phonesJson) {
-  var phones = JSON.parse(phonesJson);
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_NAME);
-  var data = sheet.getDataRange().getValues();
-  var headers = data[0];
-
-  var col = {};
-  headers.forEach(function(h, i) { col[h] = i; });
-
-  var updated = 0;
-  phones.forEach(function(entry) {
-    // Find row by nombre + apellido
-    for (var i = 1; i < data.length; i++) {
-      var nombre = String(data[i][col['Nombre']]).trim();
-      var apellido = String(data[i][col['Apellido']]).trim();
-      if (nombre === entry.nombre && apellido === entry.apellido) {
-        sheet.getRange(i + 1, col['Telefono'] + 1).setValue(entry.telefono);
-        updated++;
-        break;
-      }
-    }
-  });
-
-  return { success: true, updated: updated };
 }
 
 // Menu
