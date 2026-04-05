@@ -162,6 +162,27 @@ function saveResponses(code, responses) {
     }
   });
 
+  // Send notification email
+  try {
+    var names = responses.map(function(r) {
+      var nombre = '';
+      if (r.row && r.row > 1 && r.row <= data.length) {
+        nombre = (data[r.row - 1][col['Nombre']] + ' ' + data[r.row - 1][col['Apellido']]).trim();
+      }
+      var estado = r.confirmado === true ? 'Si' : r.confirmado === false ? 'No' : r.confirmado === 'tal_vez' ? 'A\u00fan no sabe' : '-';
+      var menu = r.menu || '-';
+      return nombre + ' -> ' + estado + (r.confirmado === true ? ' (' + menu + ')' : '');
+    }).join('\n');
+
+    var grupo = data[responses[0].row - 1][col['Grupo']];
+    var subject = 'RSVP Boda: ' + grupo;
+    var body = 'El grupo "' + grupo + '" acaba de confirmar:\n\n' + names + '\n\nVer sheet: https://docs.google.com/spreadsheets/d/1rTGn5WOs_b3OFi1n3PVdrZZ8wA4Qm6ARYTQvcTfWgVw/edit';
+
+    MailApp.sendEmail('mauricioaizaga@gmail.com,eylabriceno15@gmail.com', subject, body);
+  } catch (e) {
+    // Don't fail the save if email fails
+  }
+
   return { success: true };
 }
 
