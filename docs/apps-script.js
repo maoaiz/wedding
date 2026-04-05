@@ -22,6 +22,14 @@ function doGet(e) {
   var action = e.parameter.action || 'get';
 
   // Admin actions (no code needed)
+  if (action === 'generar_codigos') {
+    try { generateCodesRemote(); return respondGet({ success: true }, callback); }
+    catch (err) { return respondGet({ error: err.message }, callback); }
+  }
+  if (action === 'generar_mensajes') {
+    try { generateWhatsAppMessagesRemote(); return respondGet({ success: true }, callback); }
+    catch (err) { return respondGet({ error: err.message }, callback); }
+  }
   if (action === 'setup_mesas') {
     try { setupMesasRemote(); return respondGet({ success: true }, callback); }
     catch (err) { return respondGet({ error: err.message }, callback); }
@@ -702,6 +710,107 @@ function setupMesasRemote() {
   var invRules = sheet.getConditionalFormatRules();
   invRules.push(SpreadsheetApp.newConditionalFormatRule().whenTextContains('Mesa').setBackground('#d9ead3').setRanges([mesaRange]).build());
   sheet.setConditionalFormatRules(invRules);
+}
+
+function generateCodesRemote() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var col = {};
+  headers.forEach(function(h, i) { col[h] = i; });
+
+  var codeCol = col['codigo'];
+  var groupCol = col['Grupo'];
+  var existingCodes = {};
+  var groupCodes = {};
+
+  for (var i = 1; i < data.length; i++) {
+    var code = String(data[i][codeCol]).trim();
+    var group = String(data[i][groupCol]).trim();
+    if (code && code !== '' && code !== 'undefined') {
+      existingCodes[code] = true;
+      groupCodes[group] = code;
+    }
+  }
+
+  for (var i = 1; i < data.length; i++) {
+    var code = String(data[i][codeCol]).trim();
+    var group = String(data[i][groupCol]).trim();
+    if (!code || code === '' || code === 'undefined') {
+      if (groupCodes[group]) {
+        sheet.getRange(i + 1, codeCol + 1).setValue(groupCodes[group]);
+      } else {
+        var newCode;
+        do { newCode = randomCode(6); } while (existingCodes[newCode]);
+        existingCodes[newCode] = true;
+        groupCodes[group] = newCode;
+        sheet.getRange(i + 1, codeCol + 1).setValue(newCode);
+      }
+    }
+  }
+}
+
+function generateWhatsAppMessagesRemote() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var col = {};
+  headers.forEach(function(h, i) { col[h] = i; });
+
+  var baseUrl = 'https://maoaiz.github.io/wedding/?code=';
+  var groups = {};
+
+  for (var i = 1; i < data.length; i++) {
+    var group = String(data[i][col['Grupo']]).trim();
+    var code = String(data[i][col['codigo']]).trim();
+    var phone = String(data[i][col['Telefono']]).trim();
+    if (group && !groups[group]) {
+      groups[group] = { code: code, phone: '' };
+    }
+    if (!groups[group].phone && phone && phone !== '' && phone !== 'undefined') {
+      groups[group].phone = phone;
+    }
+  }
+
+  var msgSheet = ss.getSheetByName('Mensajes');
+  if (!msgSheet) msgSheet = ss.insertSheet('Mensajes');
+  else msgSheet.clearContents();
+
+  msgSheet.getRange(1, 1, 1, 5).setValues([['Grupo', 'Telefono', 'Codigo', 'Enlace RSVP', 'Enlace WhatsApp']]);
+
+  var ring = String.fromCodePoint(0x1F48D);
+  var bride = String.fromCodePoint(0x1F470);
+  var groom = String.fromCodePoint(0x1F935);
+  var party = String.fromCodePoint(0x1F389);
+  var heart = String.fromCodePoint(0x2764) + String.fromCodePoint(0xFE0F);
+  var down = String.fromCodePoint(0x1F447);
+  var pray = String.fromCodePoint(0x1F64F);
+
+  var entries = Object.entries(groups);
+  entries.forEach(function(entry, i) {
+    var group = entry[0];
+    var info = entry[1];
+    var url = baseUrl + info.code;
+    var message = 'Hola ' + group + '! ' + ring + '\n\n' +
+      'Queremos compartir contigo una noticia que nos llena de alegr\u00eda: \u00a1nos casamos! ' + bride + groom + party + '\n\n' +
+      'Nos encantar\u00eda que nos acompa\u00f1aras en este d\u00eda tan especial. ' + heart + '\n\n' +
+      'Por favor confirma tu asistencia antes del 6 de mayo ' + down + '\n' + url + '\n\n' +
+      'Un abrazo, Eyla y Mauricio ' + pray;
+    var encodedMsg = encodeURIComponent(message);
+    var cleanPhone = info.phone ? info.phone.replace(/[^0-9]/g, '') : '';
+    var waLink = cleanPhone ? 'https://wa.me/' + cleanPhone + '?text=' + encodedMsg : '';
+
+    var row = i + 2;
+    msgSheet.getRange(row, 1, 1, 3).setValues([[group, info.phone, info.code]]);
+    msgSheet.getRange(row, 4).setFormula('=HYPERLINK("' + url + '", "Ver invitaci\u00f3n")');
+    if (waLink) {
+      msgSheet.getRange(row, 5).setFormula('=HYPERLINK("' + waLink.replace(/"/g, '""') + '", "Enviar WhatsApp")');
+    }
+  });
+
+  msgSheet.autoResizeColumns(1, 5);
 }
 
 function createResumenRemote() {
