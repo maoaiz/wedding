@@ -213,6 +213,14 @@
       color: var(--white);
     }
 
+    .guest-notes {
+      display: none;
+    }
+
+    .guest-notes.visible {
+      display: block;
+    }
+
     .notes-toggle {
       font-size: 0.7rem;
       color: var(--taupe-light);
@@ -430,26 +438,27 @@
     <!-- Loading -->
     <div id="loadingState" class="loading">
       <div class="spinner"></div>
-      <p>Cargando tu invitacion...</p>
+      <p>Cargando tu invitaci&oacute;n...</p>
     </div>
 
     <!-- Error -->
     <div id="errorState" style="display:none">
       <div class="error-state">
-        <h2>Ups! No encontramos tu invitacion</h2>
-        <p>Parece que el enlace no es correcto. Si crees que es un error, escribenos y lo solucionamos.</p>
+        <h2>Ups! No encontramos tu invitaci&oacute;n</h2>
+        <p>Parece que el enlace no es correcto. Si crees que es un error, escr&iacute;benos y lo solucionamos.</p>
         <a href="https://wa.me/573166643721" class="btn-whatsapp">
-          Escribenos por WhatsApp
+          Escr&iacute;benos por WhatsApp
         </a>
       </div>
     </div>
 
     <!-- RSVP Form -->
     <div id="rsvpForm" style="display:none">
-      <p class="welcome-msg">Que alegria que estes aqui,</p>
+      <p class="welcome-msg">Qu&eacute; alegr&iacute;a que est&eacute;s aqu&iacute;,</p>
       <h2 class="family-name" id="familyName"></h2>
-      <p class="family-hint">Nos encantaria contar contigo el 6 de junio. Cuentanos si podras acompanarnos y asi preparamos todo para recibirte como mereces.</p>
-      <p class="already-responded" id="alreadyResponded" style="display:none">Ya nos confirmaste antes, pero tranquilo, puedes cambiar tu respuesta cuando quieras.</p>
+      <p class="family-hint">Nos encantar&iacute;a contar contigo el 6 de junio. Cu&eacute;ntanos si podr&aacute;s acompa&ntilde;arnos y as&iacute; preparamos todo para recibirte como mereces.</p>
+      <p class="already-responded" id="alreadyResponded" style="display:none">Ya nos confirmaste antes, pero tranquilo, puedes cambiar tu respuesta cuando quieras.
+</p>
 
       <div id="guestList"></div>
 
@@ -460,7 +469,7 @@
       <!-- Success -->
       <div class="success-msg" id="successMsg">
         <div class="check">&#10003;</div>
-        <p>Gracias! Ya quedo guardado.</p>
+        <p>Gracias! Ya qued&oacute; guardado.</p>
         <p class="sub">Si algo cambia, puedes volver a este enlace y actualizar tu respuesta.</p>
       </div>
     </div>
@@ -555,17 +564,17 @@
         card.innerHTML = `
           <div class="guest-header">
             <span class="guest-name">${member.nombre}</span>
-            ${isChild ? '<span class="badge-child">Nino</span>' : ''}
+            ${isChild ? '<span class="badge-child">Ni\u00f1o</span>' : ''}
           </div>
 
           <div class="attendance">
             <button class="attendance-btn yes ${confirmed === true ? 'selected' : ''}"
                     onclick="setAttendance(${i}, true)">
-              Si, asiste
+              S&iacute;, asiste
             </button>
             <button class="attendance-btn maybe ${confirmed === 'tal_vez' ? 'selected' : ''}"
                     onclick="setAttendance(${i}, 'tal_vez')">
-              Aun no se
+              A&uacute;n no s&eacute;
             </button>
             <button class="attendance-btn no ${confirmed === false ? 'selected' : ''}"
                     onclick="setAttendance(${i}, false)">
@@ -574,14 +583,16 @@
           </div>
 
           <div class="guest-options ${showOptions ? 'visible' : ''}" id="options-${i}">
-            <p class="field-label">Tipo de menu</p>
+            <p class="field-label">Tipo de men\u00fa</p>
             <div class="menu-options">
               <button class="menu-btn ${currentMenu === 'normal' ? 'selected' : ''}" onclick="setMenu(${i}, 'normal')">Normal</button>
               <button class="menu-btn ${currentMenu === 'vegetariano' ? 'selected' : ''}" onclick="setMenu(${i}, 'vegetariano')">Vegetariano</button>
               <button class="menu-btn ${currentMenu === 'infantil' ? 'selected' : ''}" onclick="setMenu(${i}, 'infantil')">Infantil</button>
             </div>
+          </div>
 
-            <button class="notes-toggle" onclick="toggleNotes(${i})">Quieres dejarnos una nota?</button>
+          <div class="guest-notes ${confirmed !== '' ? 'visible' : ''}" id="notes-section-${i}">
+            <button class="notes-toggle" onclick="toggleNotes(${i})">\u00bfQuieres dejarnos una nota?</button>
             <div class="notes-area ${hasNotes ? 'visible' : ''}" id="notes-area-${i}">
               <textarea class="notes-input" id="notes-${i}" rows="2"
                         placeholder="Alergias, restricciones u otra cosa que debamos saber...">${member.notas || ''}</textarea>
@@ -611,6 +622,10 @@
       } else {
         options.classList.remove('visible');
       }
+
+      // Show notes for any selection
+      var notesSection = document.getElementById(`notes-section-${index}`);
+      notesSection.classList.add('visible');
     }
 
     function setMenu(index, menu) {
