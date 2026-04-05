@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Eyla & Mauricio - Save the Date</title>
-  <meta name="description" content="Eyla & Mauricio se casan. 6 de junio de 2026.">
-  <meta property="og:title" content="Eyla & Mauricio - Save the Date">
-  <meta property="og:description" content="Nos casamos el 6 de junio de 2026">
+  <title>Eyla & Mauricio - Nos casamos!</title>
+  <meta name="description" content="Eyla & Mauricio se casan el 6 de junio de 2026. Est&aacute;s invitado!">
+  <meta property="og:title" content="Eyla & Mauricio - Nos casamos!">
+  <meta property="og:description" content="Est&aacute;s invitado a nuestra boda. 6 de junio de 2026">
   <meta property="og:image" content="images/hero.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -337,7 +337,7 @@
       <img src="images/hero.jpg" alt="Eyla y Mauricio">
     </div>
 
-    <p class="label">Save the Date</p>
+    <p class="label">Te invitamos a nuestra boda</p>
 
     <h1 class="names">Eyla <span class="amp">&</span> Mauricio</h1>
 
@@ -345,10 +345,10 @@
 
     <p class="message">Nos casamos! S&iacute;, en serio! Y no vemos la hora de compartir este d&iacute;a tan especial contigo!</p>
 
-    <p class="message-secondary">Acomp&aacute;&ntilde;anos a celebrar el sacramento del matrimonio. Reserva este d&iacute;a en tu agenda.</p>
+    <p class="message-secondary">Acomp&aacute;&ntilde;anos a celebrar el sacramento del matrimonio. Reserva este d&iacute;a en tu agenda, pronto recibir&aacute;s todos los detalles.</p>
 
     <div class="actions">
-      <a href="rsvp.html" target="_blank" class="btn btn-primary">
+      <a href="#" id="rsvpLink" class="btn btn-primary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
           <polyline points="22 4 12 14.01 9 11.01"/>
@@ -506,6 +506,15 @@
       current = (current + 1) % slides.length;
       slides[current].classList.add('active');
     }, 2200);
+
+    // Pass code from URL to RSVP link
+    const code = new URLSearchParams(window.location.search).get('code');
+    const rsvpLink = document.getElementById('rsvpLink');
+    if (code) {
+      rsvpLink.href = 'rsvp.html?code=' + encodeURIComponent(code);
+    } else {
+      rsvpLink.href = 'rsvp.html';
+    }
 
   </script>
 

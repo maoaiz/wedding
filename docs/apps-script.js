@@ -219,7 +219,7 @@ function generateWhatsAppMessages() {
   var col = {};
   headers.forEach(function(h, i) { col[h] = i; });
 
-  var baseUrl = 'https://maoaiz.github.io/wedding/rsvp.html?code=';
+  var baseUrl = 'https://maoaiz.github.io/wedding/?code=';
   var groups = {};
 
   for (var i = 1; i < data.length; i++) {
