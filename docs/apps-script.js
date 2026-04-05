@@ -244,8 +244,8 @@ function generateWhatsAppMessages() {
   }
 
   // Headers
-  msgSheet.getRange(1, 1, 1, 6).setValues([[
-    'Grupo', 'Telefono', 'Codigo', 'Enlace RSVP', 'Enlace WhatsApp', 'Mensaje'
+  msgSheet.getRange(1, 1, 1, 5).setValues([[
+    'Grupo', 'Telefono', 'Codigo', 'Enlace RSVP', 'Enlace WhatsApp'
   ]]);
 
   // Data rows
@@ -254,21 +254,21 @@ function generateWhatsAppMessages() {
     var group = entry[0];
     var info = entry[1];
     var url = baseUrl + info.code;
-    var message = 'Hola ' + group + '! \ud83d\udc8d\n\n' +
-      'Queremos compartir contigo una noticia que nos llena de alegr\u00eda: \u00a1nos casamos! \ud83d\udc70\ud83e\udd35\ud83c\udf89\n\n' +
-      'Nos encantar\u00eda que nos acompa\u00f1aras en este d\u00eda tan especial. \u2764\ufe0f\n\n' +
-      'Por favor confirma tu asistencia antes del 6 de mayo \ud83d\udc47\n' + url + '\n\n' +
-      'Un abrazo, Eyla y Mauricio \ud83d\ude4f';
+    var message = 'Hola ' + group + '! 💍\n\n' +
+      'Queremos compartir contigo una noticia que nos llena de alegría: ¡nos casamos! 👰🤵🎉\n\n' +
+      'Nos encantaría que nos acompañaras en este día tan especial. ❤️\n\n' +
+      'Por favor confirma tu asistencia antes del 6 de mayo 👇\n' + url + '\n\n' +
+      'Un abrazo, Eyla y Mauricio 🙏';
     var encodedMsg = encodeURIComponent(message);
     var phone = info.phone || '';
     var waLink = phone ? 'https://wa.me/' + phone.replace(/[^0-9]/g, '') + '?text=' + encodedMsg : '';
 
-    msgSheet.getRange(i + 2, 1, 1, 6).setValues([[
-      group, phone, info.code, url, waLink, message
+    msgSheet.getRange(i + 2, 1, 1, 5).setValues([[
+      group, phone, info.code, url, waLink
     ]]);
   });
 
-  msgSheet.autoResizeColumns(1, 6);
+  msgSheet.autoResizeColumns(1, 5);
 
   SpreadsheetApp.getUi().alert(
     'Mensajes generados: ' + entries.length + ' grupos.\n' +
