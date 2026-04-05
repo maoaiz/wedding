@@ -661,6 +661,14 @@
     }
 
     async function saveRsvp() {
+      // Validate all guests have a selection
+      const pending = familyData.miembros.filter(m => m.confirmado === '' || m.confirmado === undefined || m.confirmado === null);
+      if (pending.length > 0) {
+        const names = pending.map(m => m.nombre).join(', ');
+        alert('Por favor selecciona una opci\u00f3n para: ' + names);
+        return;
+      }
+
       const btn = document.getElementById('btnSave');
       btn.disabled = true;
       btn.classList.add('saving');
