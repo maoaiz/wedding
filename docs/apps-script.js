@@ -16,11 +16,24 @@
 const SHEET_NAME = 'Invitados';
 
 // GET endpoint: fetch family data by code
+// Supports JSONP via ?callback=functionName to avoid CORS issues
 function doGet(e) {
   const code = (e.parameter.code || '').trim().toLowerCase();
+  const callback = e.parameter.callback || '';
+  const action = e.parameter.action || 'get';
 
   if (!code) {
-    return jsonResponse({ error: 'no_code' });
+    return respondGet({ error: 'no_code' }, callback);
+  }
+
+  // Handle save action via GET (to avoid CORS issues with POST)
+  if (action === 'save') {
+    try {
+      const responses = JSON.parse(e.parameter.data || '[]');
+      return respondGet(saveResponses(code, responses), callback);
+    } catch (err) {
+      return respondGet({ error: err.message }, callback);
+    }
   }
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -51,50 +64,62 @@ function doGet(e) {
   }
 
   if (members.length === 0) {
-    return jsonResponse({ error: 'not_found' });
+    return respondGet({ error: 'not_found' }, callback);
   }
 
-  return jsonResponse({
+  return respondGet({
     familia: groupName,
     miembros: members
-  });
+  }, callback);
 }
 
-// POST endpoint: save RSVP responses
+// Return JSONP if callback is provided, otherwise plain JSON
+function respondGet(data, callback) {
+  if (callback) {
+    const js = callback + '(' + JSON.stringify(data) + ')';
+    return ContentService.createTextOutput(js).setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return jsonResponse(data);
+}
+
+// Save responses (used by both GET?action=save and POST)
+function saveResponses(code, responses) {
+  if (!code || responses.length === 0) {
+    return { error: 'invalid_data' };
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+
+  const col = {};
+  headers.forEach((h, i) => col[h] = i);
+
+  const now = new Date().toISOString();
+
+  responses.forEach(resp => {
+    const rowNum = resp.row;
+    if (rowNum && rowNum > 1 && rowNum <= data.length) {
+      const rowCode = String(data[rowNum - 1][col['code']]).trim().toLowerCase();
+      if (rowCode === code) {
+        sheet.getRange(rowNum, col['confirmado'] + 1).setValue(resp.confirmado);
+        sheet.getRange(rowNum, col['menu'] + 1).setValue(resp.menu || '');
+        sheet.getRange(rowNum, col['notas'] + 1).setValue(resp.notas || '');
+        sheet.getRange(rowNum, col['actualizado'] + 1).setValue(now);
+      }
+    }
+  });
+
+  return { success: true };
+}
+
+// POST endpoint (fallback, may have CORS issues)
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
     const code = (body.code || '').trim().toLowerCase();
-    const responses = body.responses || [];
-
-    if (!code || responses.length === 0) {
-      return jsonResponse({ error: 'invalid_data' });
-    }
-
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(SHEET_NAME);
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0];
-
-    const col = {};
-    headers.forEach((h, i) => col[h] = i);
-
-    const now = new Date().toISOString();
-
-    responses.forEach(resp => {
-      const rowNum = resp.row;
-      if (rowNum && rowNum > 1 && rowNum <= data.length) {
-        const rowCode = String(data[rowNum - 1][col['code']]).trim().toLowerCase();
-        if (rowCode === code) {
-          sheet.getRange(rowNum, col['confirmado'] + 1).setValue(resp.confirmado);
-          sheet.getRange(rowNum, col['menu'] + 1).setValue(resp.menu || '');
-          sheet.getRange(rowNum, col['notas'] + 1).setValue(resp.notas || '');
-          sheet.getRange(rowNum, col['actualizado'] + 1).setValue(now);
-        }
-      }
-    });
-
-    return jsonResponse({ success: true });
+    return jsonResponse(saveResponses(code, body.responses || []));
   } catch (err) {
     return jsonResponse({ error: err.message });
   }

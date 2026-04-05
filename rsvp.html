@@ -433,7 +433,7 @@
     // =============================================
     // CONFIG: Replace with your Apps Script URL
     // =============================================
-    const API_URL = 'https://script.google.com/macros/s/AKfycbynxn2XYXMQSvlxiy2h2rA3tzDrqAZQ0Ni5IHJdM30gKiPLrlSrD-FPb4ZB6IvV0i1l/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbz2WItvL-OdBbyvhYPTd24EkJh3p_8JkeFcPvpN3uzmZ0eGIpMDg40YER6DAJ8sHaCN/exec';
 
     let familyData = null;
 
@@ -450,8 +450,7 @@
 
     async function loadFamily(code) {
       try {
-        const res = await fetch(`${API_URL}?code=${encodeURIComponent(code)}`);
-        const data = await res.json();
+        const data = await appsScriptGet({ code: code });
 
         if (data.error) {
           showError();
@@ -463,6 +462,29 @@
       } catch (err) {
         showError();
       }
+    }
+
+    // Apps Script returns a 302 redirect which breaks fetch CORS.
+    // Use a script tag (JSONP-style) via the callback parameter workaround,
+    // or simply follow the redirect manually.
+    function appsScriptGet(params) {
+      return new Promise((resolve, reject) => {
+        const qs = Object.entries(params).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+        const callbackName = '_cb_' + Date.now();
+        window[callbackName] = (data) => {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          resolve(data);
+        };
+        const script = document.createElement('script');
+        script.src = `${API_URL}?${qs}&callback=${callbackName}`;
+        script.onerror = () => {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          reject(new Error('Request failed'));
+        };
+        document.body.appendChild(script);
+      });
     }
 
     function renderForm(data) {
@@ -566,13 +588,11 @@
       }));
 
       try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({ code, responses })
+        const data = await appsScriptGet({
+          action: 'save',
+          code: code,
+          data: JSON.stringify(responses)
         });
-
-        const data = await res.json();
 
         if (data.success) {
           document.getElementById('guestList').style.display = 'none';
