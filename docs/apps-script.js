@@ -794,66 +794,51 @@ function generateMapaMesasRemote() {
   mapaSheet.getRange(r, 1).setFontWeight('bold').setFontSize(14);
   r += 2;
 
-  for (var t = 0; t < tableNames.length; t += 2) {
+  // Draw a single table at position
+  function drawTable(name, table, row, colStart, color) {
+    mapaSheet.getRange(row, colStart, 1, 2).setValues([[name + ' (' + table.members.length + '/' + table.capacity + ')', '']]);
+    mapaSheet.getRange(row, colStart, 1, 2).setBackground(color).setFontWeight('bold').setHorizontalAlignment('center');
+    mapaSheet.getRange(row, colStart, 1, 2).setBorder(true, true, true, true, false, false, borderColor, border);
+    row++;
+
+    for (var m = 0; m < table.capacity; m++) {
+      if (m < table.members.length) {
+        var p = table.members[m];
+        var e = confLabel(p.confirmado);
+        mapaSheet.getRange(row, colStart).setValue(p.nombre).setBackground('#f5f0eb');
+        mapaSheet.getRange(row, colStart + 1).setValue(e.text).setBackground(e.color).setFontSize(9).setHorizontalAlignment('center');
+      } else {
+        mapaSheet.getRange(row, colStart).setValue('- vac\u00edo -').setFontColor('#cccccc').setHorizontalAlignment('center');
+        mapaSheet.getRange(row, colStart + 1).setBackground('#fafafa');
+      }
+      mapaSheet.getRange(row, colStart, 1, 2).setBorder(false, true, false, true, false, false, borderColor, border);
+      row++;
+    }
+    mapaSheet.getRange(row - 1, colStart, 1, 2).setBorder(false, true, true, true, false, false, borderColor, border);
+    return row;
+  }
+
+  // First table (Principal) alone
+  var firstEnd = drawTable(tableNames[0], tables[tableNames[0]], r, 1, colors[0]);
+  r = firstEnd + 2;
+
+  // Rest in pairs
+  for (var t = 1; t < tableNames.length; t += 2) {
     var startRow = r;
 
     // LEFT TABLE
     var leftName = tableNames[t];
     var leftTable = tables[leftName];
-    var lc = 1; // left start column
-
-    // Header
-    mapaSheet.getRange(r, lc, 1, 2).setValues([[leftName + ' (' + leftTable.members.length + '/' + leftTable.capacity + ')', '']]);
-    mapaSheet.getRange(r, lc, 1, 2).setBackground(colors[t % colors.length]).setFontWeight('bold').setHorizontalAlignment('center');
-    mapaSheet.getRange(r, lc, 1, 2).setBorder(true, true, true, true, false, false, borderColor, border);
-    r++;
-
-    for (var m = 0; m < leftTable.capacity; m++) {
-      if (m < leftTable.members.length) {
-        var p = leftTable.members[m];
-        var e = confLabel(p.confirmado);
-        mapaSheet.getRange(r, lc).setValue(p.nombre).setBackground('#f5f0eb');
-        mapaSheet.getRange(r, lc + 1).setValue(e.text).setBackground(e.color).setFontSize(9).setHorizontalAlignment('center');
-      } else {
-        mapaSheet.getRange(r, lc).setValue('- vac\u00edo -').setFontColor('#cccccc').setHorizontalAlignment('center');
-        mapaSheet.getRange(r, lc + 1).setBackground('#fafafa');
-      }
-      mapaSheet.getRange(r, lc, 1, 2).setBorder(false, true, false, true, false, false, borderColor, border);
-      r++;
-    }
-    // Bottom border
-    mapaSheet.getRange(r - 1, lc, 1, 2).setBorder(false, true, true, true, false, false, borderColor, border);
+    var leftEnd = drawTable(leftName, leftTable, r, 1, colors[t % colors.length]);
 
     // RIGHT TABLE
     if (t + 1 < tableNames.length) {
       var rightName = tableNames[t + 1];
       var rightTable = tables[rightName];
-      var rc = 4; // right start column
-      var rr = startRow;
-
-      // Header
-      mapaSheet.getRange(rr, rc, 1, 2).setValues([[rightName + ' (' + rightTable.members.length + '/' + rightTable.capacity + ')', '']]);
-      mapaSheet.getRange(rr, rc, 1, 2).setBackground(colors[(t+1) % colors.length]).setFontWeight('bold').setHorizontalAlignment('center');
-      mapaSheet.getRange(rr, rc, 1, 2).setBorder(true, true, true, true, false, false, borderColor, border);
-      rr++;
-
-      for (var m = 0; m < rightTable.capacity; m++) {
-        if (m < rightTable.members.length) {
-          var p = rightTable.members[m];
-          var e = confLabel(p.confirmado);
-          mapaSheet.getRange(rr, rc).setValue(p.nombre).setBackground('#f5f0eb');
-          mapaSheet.getRange(rr, rc + 1).setValue(e.text).setBackground(e.color).setFontSize(9).setHorizontalAlignment('center');
-        } else {
-          mapaSheet.getRange(rr, rc).setValue('- vac\u00edo -').setFontColor('#cccccc').setHorizontalAlignment('center');
-          mapaSheet.getRange(rr, rc + 1).setBackground('#fafafa');
-        }
-        mapaSheet.getRange(rr, rc, 1, 2).setBorder(false, true, false, true, false, false, borderColor, border);
-        rr++;
-      }
-      mapaSheet.getRange(rr - 1, rc, 1, 2).setBorder(false, true, true, true, false, false, borderColor, border);
+      drawTable(rightName, rightTable, startRow, 4, colors[(t+1) % colors.length]);
     }
 
-    r += 2;
+    r = leftEnd + 2;
   }
 
   // Sin mesa
