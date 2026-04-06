@@ -21,6 +21,12 @@ function doGet(e) {
   var callback = e.parameter.callback || '';
   var action = e.parameter.action || 'get';
 
+  // Refresh dropdown only (safe, doesn't reset assignments)
+  if (action === 'refresh_dropdown') {
+    try { refreshMesaDropdown(); return respondGet({ success: true }, callback); }
+    catch (err) { return respondGet({ error: err.message }, callback); }
+  }
+
   // Admin actions (no code needed)
   if (action === 'generar_codigos') {
     try { generateCodesRemote(); return respondGet({ success: true }, callback); }
@@ -824,6 +830,34 @@ function createResumenRemote() {
   boldRows.forEach(function(r) { resSheet.getRange(r, 1, 1, 2).setFontWeight('bold'); });
   resSheet.setColumnWidth(1, 280);
   resSheet.setColumnWidth(2, 100);
+}
+
+function refreshMesaDropdown() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var mesasSheet = ss.getSheetByName('Mesas');
+  if (!mesasSheet) throw new Error('No existe la pesta\u00f1a Mesas');
+
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var col = {};
+  headers.forEach(function(h, i) { col[h] = i; });
+
+  var mesaColIndex = col['mesa'] + 1;
+  var lastRow = sheet.getLastRow();
+
+  // Find last mesa row (skip TOTAL and Sin mesa rows)
+  var mesasData = mesasSheet.getDataRange().getValues();
+  var lastMesaRow = 1;
+  for (var i = 1; i < mesasData.length; i++) {
+    var name = String(mesasData[i][0]).trim();
+    if (name && name !== 'TOTAL' && name !== 'Sin mesa (confirmados)') {
+      lastMesaRow = i + 1;
+    }
+  }
+
+  var mesaNamesRange = mesasSheet.getRange('A2:A' + lastMesaRow);
+  var rule = SpreadsheetApp.newDataValidation().requireValueInRange(mesaNamesRange, true).setAllowInvalid(false).build();
+  sheet.getRange(2, mesaColIndex, lastRow - 1, 1).setDataValidation(rule);
 }
 
 function confLabel(conf) {
