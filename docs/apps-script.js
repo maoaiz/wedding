@@ -902,8 +902,8 @@ function generateMapaMesasRemote() {
   }
 
   var mapaSheet = ss.getSheetByName('Mapa de Mesas');
-  if (!mapaSheet) mapaSheet = ss.insertSheet('Mapa de Mesas');
-  else { mapaSheet.getDataRange().breakApart(); mapaSheet.clearContents(); mapaSheet.clearFormats(); }
+  if (mapaSheet) ss.deleteSheet(mapaSheet);
+  mapaSheet = ss.insertSheet('Mapa de Mesas');
 
   var tableNames = Object.keys(tables);
   var currentRow = 1;
