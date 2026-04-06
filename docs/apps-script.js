@@ -609,7 +609,7 @@ function setupMesasRemote() {
   if (!mesasSheet) mesasSheet = ss.insertSheet('Mesas');
   else { mesasSheet.clearContents(); mesasSheet.clearFormats(); }
 
-  var tableNames = ['Mesa 1','Mesa 2','Mesa 3','Mesa 4','Mesa 5','Mesa 6','Mesa 7','Mesa 8'];
+  var tableNames = ['Principal','Brice\u00f1o','C\u00e1rdenas','Chamos','iKono','Aizaga 1','Aizaga 2','Pais','UTP'];
   var mesaCol = String.fromCharCode(65 + col['mesa']);
   var lastRow = sheet.getLastRow();
 
