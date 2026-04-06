@@ -783,78 +783,79 @@ function generateMapaMesasRemote() {
   if (mapaSheet) ss.deleteSheet(mapaSheet);
   mapaSheet = ss.insertSheet('Mapa de Mesas');
 
+  // Build all data as a 2D array first, then write once (no merge needed)
   var tableNames = Object.keys(tables);
-  var currentRow = 1;
+  var rows = [];
+  var formats = []; // {row, col, bg, bold, fontSize, fontColor, align}
+
+  // Title
+  rows.push(['MAPA DE MESAS - Boda Eyla & Mauricio', '', '', '', '', '']);
+  formats.push({r:0, c:0, bold:true, fontSize:14, align:'left'});
+  rows.push(['', '', '', '', '', '']);
+
   var colors = ['#e8d5c4','#d5c4b3','#c4b3a2','#dcc8b8','#e8d0c0','#d0b8a8','#c8b0a0','#e0c8b8'];
 
-  mapaSheet.getRange(currentRow, 1, 1, 10).merge();
-  mapaSheet.getRange(currentRow, 1).setValue('MAPA DE MESAS - Boda Eyla & Mauricio');
-  mapaSheet.getRange(currentRow, 1).setFontWeight('bold').setFontSize(14).setHorizontalAlignment('center');
-  currentRow += 2;
-
   for (var t = 0; t < tableNames.length; t += 2) {
-    var startRow = currentRow;
     var leftName = tableNames[t];
     var leftTable = tables[leftName];
+    var rightName = (t + 1 < tableNames.length) ? tableNames[t + 1] : null;
+    var rightTable = rightName ? tables[rightName] : null;
+    var maxCap = Math.max(leftTable.capacity, rightTable ? rightTable.capacity : 0);
 
-    mapaSheet.getRange(currentRow, 1, 1, 3).merge();
-    mapaSheet.getRange(currentRow, 1).setValue(leftName + ' (' + leftTable.members.length + '/' + leftTable.capacity + ')');
-    mapaSheet.getRange(currentRow, 1).setFontWeight('bold').setHorizontalAlignment('center');
-    mapaSheet.getRange(currentRow, 1, 1, 3).setBackground(colors[t % colors.length]);
-    currentRow++;
+    // Header row
+    var headerRow = rows.length;
+    var leftHeader = leftName + ' (' + leftTable.members.length + '/' + leftTable.capacity + ')';
+    var rightHeader = rightTable ? rightName + ' (' + rightTable.members.length + '/' + rightTable.capacity + ')' : '';
+    rows.push([leftHeader, '', '', rightHeader, '', '']);
+    formats.push({r:headerRow, c:0, bold:true, bg:colors[t % colors.length]});
+    formats.push({r:headerRow, c:1, bg:colors[t % colors.length]});
+    formats.push({r:headerRow, c:2, bg:colors[t % colors.length]});
+    if (rightTable) {
+      formats.push({r:headerRow, c:3, bold:true, bg:colors[(t+1) % colors.length]});
+      formats.push({r:headerRow, c:4, bg:colors[(t+1) % colors.length]});
+      formats.push({r:headerRow, c:5, bg:colors[(t+1) % colors.length]});
+    }
 
-    for (var m = 0; m < leftTable.capacity; m++) {
+    // Member rows
+    for (var m = 0; m < maxCap; m++) {
+      var rowData = ['', '', '', '', '', ''];
+      var rowIdx = rows.length;
+
       if (m < leftTable.members.length) {
-        var p = leftTable.members[m];
-        mapaSheet.getRange(currentRow, 1, 1, 2).merge();
-        mapaSheet.getRange(currentRow, 1).setValue(p.nombre);
-        mapaSheet.getRange(currentRow, 1, 1, 2).setBackground('#f5f0eb');
-        var estado = confLabel(p.confirmado);
-        mapaSheet.getRange(currentRow, 3).setValue(estado.text);
-        mapaSheet.getRange(currentRow, 3).setBackground(estado.color).setFontSize(9).setHorizontalAlignment('center');
-      } else {
-        mapaSheet.getRange(currentRow, 1, 1, 3).merge();
-        mapaSheet.getRange(currentRow, 1).setValue('- vac\u00edo -');
-        mapaSheet.getRange(currentRow, 1).setFontColor('#cccccc').setHorizontalAlignment('center');
+        var lp = leftTable.members[m];
+        var le = confLabel(lp.confirmado);
+        rowData[0] = lp.nombre;
+        rowData[1] = le.text;
+        formats.push({r:rowIdx, c:0, bg:'#f5f0eb'});
+        formats.push({r:rowIdx, c:1, bg:le.color, fontSize:9, align:'center'});
+      } else if (m < leftTable.capacity) {
+        rowData[0] = '- vac\u00edo -';
+        formats.push({r:rowIdx, c:0, fontColor:'#cccccc', align:'center'});
       }
-      currentRow++;
-    }
 
-    if (t + 1 < tableNames.length) {
-      var rightName = tableNames[t + 1];
-      var rightTable = tables[rightName];
-      var rightRow = startRow;
-
-      mapaSheet.getRange(rightRow, 5, 1, 3).merge();
-      mapaSheet.getRange(rightRow, 5).setValue(rightName + ' (' + rightTable.members.length + '/' + rightTable.capacity + ')');
-      mapaSheet.getRange(rightRow, 5).setFontWeight('bold').setHorizontalAlignment('center');
-      mapaSheet.getRange(rightRow, 5, 1, 3).setBackground(colors[(t+1) % colors.length]);
-      rightRow++;
-
-      for (var m = 0; m < rightTable.capacity; m++) {
+      if (rightTable) {
         if (m < rightTable.members.length) {
-          var p = rightTable.members[m];
-          mapaSheet.getRange(rightRow, 5, 1, 2).merge();
-          mapaSheet.getRange(rightRow, 5).setValue(p.nombre);
-          mapaSheet.getRange(rightRow, 5, 1, 2).setBackground('#f5f0eb');
-          var estado = confLabel(p.confirmado);
-          mapaSheet.getRange(rightRow, 7).setValue(estado.text);
-          mapaSheet.getRange(rightRow, 7).setBackground(estado.color).setFontSize(9).setHorizontalAlignment('center');
-        } else {
-          mapaSheet.getRange(rightRow, 5, 1, 3).merge();
-          mapaSheet.getRange(rightRow, 5).setValue('- vac\u00edo -');
-          mapaSheet.getRange(rightRow, 5).setFontColor('#cccccc').setHorizontalAlignment('center');
+          var rp = rightTable.members[m];
+          var re = confLabel(rp.confirmado);
+          rowData[3] = rp.nombre;
+          rowData[4] = re.text;
+          formats.push({r:rowIdx, c:3, bg:'#f5f0eb'});
+          formats.push({r:rowIdx, c:4, bg:re.color, fontSize:9, align:'center'});
+        } else if (m < rightTable.capacity) {
+          rowData[3] = '- vac\u00edo -';
+          formats.push({r:rowIdx, c:3, fontColor:'#cccccc', align:'center'});
         }
-        rightRow++;
       }
+
+      rows.push(rowData);
     }
-    currentRow += 2;
+
+    // Spacing
+    rows.push(['', '', '', '', '', '']);
+    rows.push(['', '', '', '', '', '']);
   }
 
-  for (var c = 1; c <= 8; c++) mapaSheet.setColumnWidth(c, 120);
-  mapaSheet.setColumnWidth(4, 30);
-
-  // List of people without table
+  // Sin mesa
   var sinMesa = [];
   for (var i = 1; i < data.length; i++) {
     var mesa = String(data[i][col['mesa']]).trim();
@@ -866,30 +867,51 @@ function generateMapaMesasRemote() {
   }
 
   if (sinMesa.length > 0) {
-    currentRow += 2;
-    mapaSheet.getRange(currentRow, 1, 1, 7).merge();
-    mapaSheet.getRange(currentRow, 1).setValue('SIN MESA ASIGNADA (' + sinMesa.length + ')');
-    mapaSheet.getRange(currentRow, 1).setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center');
-    mapaSheet.getRange(currentRow, 1, 1, 7).setBackground('#f4cccc');
-    currentRow++;
+    var sinRow = rows.length;
+    rows.push(['SIN MESA ASIGNADA (' + sinMesa.length + ')', '', '', '', '', '']);
+    formats.push({r:sinRow, c:0, bold:true, fontSize:12, bg:'#f4cccc'});
+    formats.push({r:sinRow, c:1, bg:'#f4cccc'});
+    formats.push({r:sinRow, c:2, bg:'#f4cccc'});
+    formats.push({r:sinRow, c:3, bg:'#f4cccc'});
+    formats.push({r:sinRow, c:4, bg:'#f4cccc'});
+    formats.push({r:sinRow, c:5, bg:'#f4cccc'});
 
-    mapaSheet.getRange(currentRow, 1).setValue('Nombre');
-    mapaSheet.getRange(currentRow, 4, 1, 4).merge();
-    mapaSheet.getRange(currentRow, 4).setValue('Estado');
-    mapaSheet.getRange(currentRow, 1, 1, 7).setFontWeight('bold');
-    currentRow++;
+    var hdrRow = rows.length;
+    rows.push(['Nombre', '', '', 'Estado', '', '']);
+    formats.push({r:hdrRow, c:0, bold:true});
+    formats.push({r:hdrRow, c:3, bold:true});
 
     sinMesa.forEach(function(p) {
-      mapaSheet.getRange(currentRow, 1, 1, 3).merge();
-      mapaSheet.getRange(currentRow, 1).setValue(p.nombre);
-      mapaSheet.getRange(currentRow, 4, 1, 4).merge();
+      var idx = rows.length;
       var estado = p.confirmado === 'si' ? 'Confirmado' : p.confirmado === 'no' ? 'No asiste' : p.confirmado === 'tal_vez' ? 'A\u00fan no sabe' : 'Sin responder';
-      mapaSheet.getRange(currentRow, 4).setValue(estado);
-      if (p.confirmado === 'si') mapaSheet.getRange(currentRow, 4, 1, 4).setBackground('#d9ead3');
-      else if (p.confirmado === 'no') mapaSheet.getRange(currentRow, 4, 1, 4).setBackground('#f4cccc');
-      currentRow++;
+      var bg = p.confirmado === 'si' ? '#d9ead3' : p.confirmado === 'no' ? '#f4cccc' : '';
+      rows.push([p.nombre, '', '', estado, '', '']);
+      if (bg) formats.push({r:idx, c:3, bg:bg});
     });
   }
+
+  // Write all data at once
+  if (rows.length > 0) {
+    mapaSheet.getRange(1, 1, rows.length, 6).setValues(rows);
+  }
+
+  // Apply formats
+  formats.forEach(function(f) {
+    var cell = mapaSheet.getRange(f.r + 1, f.c + 1);
+    if (f.bold) cell.setFontWeight('bold');
+    if (f.fontSize) cell.setFontSize(f.fontSize);
+    if (f.bg) cell.setBackground(f.bg);
+    if (f.fontColor) cell.setFontColor(f.fontColor);
+    if (f.align) cell.setHorizontalAlignment(f.align);
+  });
+
+  // Column widths
+  mapaSheet.setColumnWidth(1, 180);
+  mapaSheet.setColumnWidth(2, 80);
+  mapaSheet.setColumnWidth(3, 30);
+  mapaSheet.setColumnWidth(4, 180);
+  mapaSheet.setColumnWidth(5, 80);
+  mapaSheet.setColumnWidth(6, 30);
 }
 
 // Menu
