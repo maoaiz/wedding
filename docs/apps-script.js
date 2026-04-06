@@ -783,76 +783,77 @@ function generateMapaMesasRemote() {
   if (mapaSheet) ss.deleteSheet(mapaSheet);
   mapaSheet = ss.insertSheet('Mapa de Mesas');
 
-  // Build all data as a 2D array first, then write once (no merge needed)
   var tableNames = Object.keys(tables);
-  var rows = [];
-  var formats = []; // {row, col, bg, bold, fontSize, fontColor, align}
+  var colors = ['#e8d5c4','#d5c4b3','#c4b3a2','#dcc8b8','#e8d0c0','#d0b8a8','#c8b0a0','#e0c8b8'];
+  var border = SpreadsheetApp.BorderStyle.SOLID;
+  var borderColor = '#c0b0a0';
 
   // Title
-  rows.push(['MAPA DE MESAS - Boda Eyla & Mauricio', '', '', '', '', '']);
-  formats.push({r:0, c:0, bold:true, fontSize:14, align:'left'});
-  rows.push(['', '', '', '', '', '']);
-
-  var colors = ['#e8d5c4','#d5c4b3','#c4b3a2','#dcc8b8','#e8d0c0','#d0b8a8','#c8b0a0','#e0c8b8'];
+  var r = 1;
+  mapaSheet.getRange(r, 1).setValue('MAPA DE MESAS - Boda Eyla & Mauricio');
+  mapaSheet.getRange(r, 1).setFontWeight('bold').setFontSize(14);
+  r += 2;
 
   for (var t = 0; t < tableNames.length; t += 2) {
+    var startRow = r;
+
+    // LEFT TABLE
     var leftName = tableNames[t];
     var leftTable = tables[leftName];
-    var rightName = (t + 1 < tableNames.length) ? tableNames[t + 1] : null;
-    var rightTable = rightName ? tables[rightName] : null;
-    var maxCap = Math.max(leftTable.capacity, rightTable ? rightTable.capacity : 0);
+    var lc = 1; // left start column
 
-    // Header row
-    var headerRow = rows.length;
-    var leftHeader = leftName + ' (' + leftTable.members.length + '/' + leftTable.capacity + ')';
-    var rightHeader = rightTable ? rightName + ' (' + rightTable.members.length + '/' + rightTable.capacity + ')' : '';
-    rows.push([leftHeader, '', '', rightHeader, '', '']);
-    formats.push({r:headerRow, c:0, bold:true, bg:colors[t % colors.length]});
-    formats.push({r:headerRow, c:1, bg:colors[t % colors.length]});
-    formats.push({r:headerRow, c:2, bg:colors[t % colors.length]});
-    if (rightTable) {
-      formats.push({r:headerRow, c:3, bold:true, bg:colors[(t+1) % colors.length]});
-      formats.push({r:headerRow, c:4, bg:colors[(t+1) % colors.length]});
-      formats.push({r:headerRow, c:5, bg:colors[(t+1) % colors.length]});
-    }
+    // Header
+    mapaSheet.getRange(r, lc, 1, 2).setValues([[leftName + ' (' + leftTable.members.length + '/' + leftTable.capacity + ')', '']]);
+    mapaSheet.getRange(r, lc, 1, 2).setBackground(colors[t % colors.length]).setFontWeight('bold').setHorizontalAlignment('center');
+    mapaSheet.getRange(r, lc, 1, 2).setBorder(true, true, true, true, false, false, borderColor, border);
+    r++;
 
-    // Member rows
-    for (var m = 0; m < maxCap; m++) {
-      var rowData = ['', '', '', '', '', ''];
-      var rowIdx = rows.length;
-
+    for (var m = 0; m < leftTable.capacity; m++) {
       if (m < leftTable.members.length) {
-        var lp = leftTable.members[m];
-        var le = confLabel(lp.confirmado);
-        rowData[0] = lp.nombre;
-        rowData[1] = le.text;
-        formats.push({r:rowIdx, c:0, bg:'#f5f0eb'});
-        formats.push({r:rowIdx, c:1, bg:le.color, fontSize:9, align:'center'});
-      } else if (m < leftTable.capacity) {
-        rowData[0] = '- vac\u00edo -';
-        formats.push({r:rowIdx, c:0, fontColor:'#cccccc', align:'center'});
+        var p = leftTable.members[m];
+        var e = confLabel(p.confirmado);
+        mapaSheet.getRange(r, lc).setValue(p.nombre).setBackground('#f5f0eb');
+        mapaSheet.getRange(r, lc + 1).setValue(e.text).setBackground(e.color).setFontSize(9).setHorizontalAlignment('center');
+      } else {
+        mapaSheet.getRange(r, lc).setValue('- vac\u00edo -').setFontColor('#cccccc').setHorizontalAlignment('center');
+        mapaSheet.getRange(r, lc + 1).setBackground('#fafafa');
       }
+      mapaSheet.getRange(r, lc, 1, 2).setBorder(false, true, false, true, false, false, borderColor, border);
+      r++;
+    }
+    // Bottom border
+    mapaSheet.getRange(r - 1, lc, 1, 2).setBorder(false, true, true, true, false, false, borderColor, border);
 
-      if (rightTable) {
+    // RIGHT TABLE
+    if (t + 1 < tableNames.length) {
+      var rightName = tableNames[t + 1];
+      var rightTable = tables[rightName];
+      var rc = 4; // right start column
+      var rr = startRow;
+
+      // Header
+      mapaSheet.getRange(rr, rc, 1, 2).setValues([[rightName + ' (' + rightTable.members.length + '/' + rightTable.capacity + ')', '']]);
+      mapaSheet.getRange(rr, rc, 1, 2).setBackground(colors[(t+1) % colors.length]).setFontWeight('bold').setHorizontalAlignment('center');
+      mapaSheet.getRange(rr, rc, 1, 2).setBorder(true, true, true, true, false, false, borderColor, border);
+      rr++;
+
+      for (var m = 0; m < rightTable.capacity; m++) {
         if (m < rightTable.members.length) {
-          var rp = rightTable.members[m];
-          var re = confLabel(rp.confirmado);
-          rowData[3] = rp.nombre;
-          rowData[4] = re.text;
-          formats.push({r:rowIdx, c:3, bg:'#f5f0eb'});
-          formats.push({r:rowIdx, c:4, bg:re.color, fontSize:9, align:'center'});
-        } else if (m < rightTable.capacity) {
-          rowData[3] = '- vac\u00edo -';
-          formats.push({r:rowIdx, c:3, fontColor:'#cccccc', align:'center'});
+          var p = rightTable.members[m];
+          var e = confLabel(p.confirmado);
+          mapaSheet.getRange(rr, rc).setValue(p.nombre).setBackground('#f5f0eb');
+          mapaSheet.getRange(rr, rc + 1).setValue(e.text).setBackground(e.color).setFontSize(9).setHorizontalAlignment('center');
+        } else {
+          mapaSheet.getRange(rr, rc).setValue('- vac\u00edo -').setFontColor('#cccccc').setHorizontalAlignment('center');
+          mapaSheet.getRange(rr, rc + 1).setBackground('#fafafa');
         }
+        mapaSheet.getRange(rr, rc, 1, 2).setBorder(false, true, false, true, false, false, borderColor, border);
+        rr++;
       }
-
-      rows.push(rowData);
+      mapaSheet.getRange(rr - 1, rc, 1, 2).setBorder(false, true, true, true, false, false, borderColor, border);
     }
 
-    // Spacing
-    rows.push(['', '', '', '', '', '']);
-    rows.push(['', '', '', '', '', '']);
+    r += 2;
   }
 
   // Sin mesa
@@ -867,51 +868,31 @@ function generateMapaMesasRemote() {
   }
 
   if (sinMesa.length > 0) {
-    var sinRow = rows.length;
-    rows.push(['SIN MESA ASIGNADA (' + sinMesa.length + ')', '', '', '', '', '']);
-    formats.push({r:sinRow, c:0, bold:true, fontSize:12, bg:'#f4cccc'});
-    formats.push({r:sinRow, c:1, bg:'#f4cccc'});
-    formats.push({r:sinRow, c:2, bg:'#f4cccc'});
-    formats.push({r:sinRow, c:3, bg:'#f4cccc'});
-    formats.push({r:sinRow, c:4, bg:'#f4cccc'});
-    formats.push({r:sinRow, c:5, bg:'#f4cccc'});
+    r += 1;
+    mapaSheet.getRange(r, 1, 1, 5).setValues([['SIN MESA ASIGNADA (' + sinMesa.length + ')', '', '', '', '']]);
+    mapaSheet.getRange(r, 1, 1, 5).setFontWeight('bold').setFontSize(12).setBackground('#f4cccc');
+    r++;
 
-    var hdrRow = rows.length;
-    rows.push(['Nombre', '', '', 'Estado', '', '']);
-    formats.push({r:hdrRow, c:0, bold:true});
-    formats.push({r:hdrRow, c:3, bold:true});
+    mapaSheet.getRange(r, 1).setValue('Nombre').setFontWeight('bold');
+    mapaSheet.getRange(r, 2).setValue('Estado').setFontWeight('bold');
+    r++;
 
     sinMesa.forEach(function(p) {
-      var idx = rows.length;
       var estado = p.confirmado === 'si' ? 'Confirmado' : p.confirmado === 'no' ? 'No asiste' : p.confirmado === 'tal_vez' ? 'A\u00fan no sabe' : 'Sin responder';
-      var bg = p.confirmado === 'si' ? '#d9ead3' : p.confirmado === 'no' ? '#f4cccc' : '';
-      rows.push([p.nombre, '', '', estado, '', '']);
-      if (bg) formats.push({r:idx, c:3, bg:bg});
+      mapaSheet.getRange(r, 1).setValue(p.nombre);
+      mapaSheet.getRange(r, 2).setValue(estado);
+      if (p.confirmado === 'si') mapaSheet.getRange(r, 2).setBackground('#d9ead3');
+      else if (p.confirmado === 'no') mapaSheet.getRange(r, 2).setBackground('#f4cccc');
+      r++;
     });
   }
 
-  // Write all data at once
-  if (rows.length > 0) {
-    mapaSheet.getRange(1, 1, rows.length, 6).setValues(rows);
-  }
-
-  // Apply formats
-  formats.forEach(function(f) {
-    var cell = mapaSheet.getRange(f.r + 1, f.c + 1);
-    if (f.bold) cell.setFontWeight('bold');
-    if (f.fontSize) cell.setFontSize(f.fontSize);
-    if (f.bg) cell.setBackground(f.bg);
-    if (f.fontColor) cell.setFontColor(f.fontColor);
-    if (f.align) cell.setHorizontalAlignment(f.align);
-  });
-
   // Column widths
   mapaSheet.setColumnWidth(1, 180);
-  mapaSheet.setColumnWidth(2, 80);
+  mapaSheet.setColumnWidth(2, 90);
   mapaSheet.setColumnWidth(3, 30);
   mapaSheet.setColumnWidth(4, 180);
-  mapaSheet.setColumnWidth(5, 80);
-  mapaSheet.setColumnWidth(6, 30);
+  mapaSheet.setColumnWidth(5, 90);
 }
 
 // Menu
