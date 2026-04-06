@@ -832,6 +832,11 @@ function createResumenRemote() {
   resSheet.setColumnWidth(2, 100);
 }
 
+function refreshMesaDropdownMenu() {
+  refreshMesaDropdown();
+  SpreadsheetApp.getUi().alert('Dropdown actualizado.');
+}
+
 function refreshMesaDropdown() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
@@ -1017,7 +1022,8 @@ function onOpen() {
     .addItem('Generar mensajes WhatsApp', 'generateWhatsAppMessages')
     .addItem('Crear Resumen', 'createResumen')
     .addSeparator()
-    .addItem('Configurar mesas', 'setupMesas')
+    .addItem('Configurar mesas (resetea todo)', 'setupMesas')
+    .addItem('Actualizar dropdown de mesas', 'refreshMesaDropdownMenu')
     .addItem('Generar mapa de mesas', 'generateMapaMesasMenu')
     .addToUi();
 }
