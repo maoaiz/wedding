@@ -743,11 +743,9 @@ function generateWhatsAppMessagesRemote() {
     var group = entry[0];
     var info = entry[1];
     var url = baseUrl + info.code;
-    var message = 'Hola ' + group + '! ' + ring + '\n\n' +
-      'Queremos compartir contigo una noticia que nos llena de alegr\u00eda: \u00a1nos casamos! ' + bride + groom + party + '\n\n' +
-      'Nos encantar\u00eda que nos acompa\u00f1aras en este d\u00eda tan especial. ' + heart + '\n\n' +
-      'Por favor confirma tu asistencia antes del 6 de mayo ' + down + '\n' + url + '\n\n' +
-      'Un abrazo, Eyla y Mauricio ' + pray;
+    var message = 'Hola ' + group + '! ' + heart + '\n\n' +
+      'Tenemos una invitaci\u00f3n muy especial para ti. ' + ring + '\n\n' +
+      'Abre aqu\u00ed para ver todos los detalles ' + down + '\n' + url;
     var encodedMsg = encodeURIComponent(message);
     var cleanPhone = info.phone ? info.phone.replace(/[^0-9]/g, '') : '';
     var waLink = cleanPhone ? 'https://wa.me/' + cleanPhone + '?text=' + encodedMsg : '';
