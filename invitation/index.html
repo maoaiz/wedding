@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Invitaci&oacute;n - Eyla & Mauricio</title>
+  <meta name="description" content="Est&aacute;s invitado a la boda de Eyla y Mauricio. 6 de junio de 2026.">
+  <meta property="og:title" content="Eyla & Mauricio - Invitaci&oacute;n">
+  <meta property="og:description" content="Tienes una invitaci&oacute;n especial. &Aacute;brela!">
+  <meta property="og:image" content="../images/hero.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../effects/petals-floral.css">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --cream: #ECE7DF;
+      --taupe: #766865;
+      --taupe-light: #9a8e8b;
+      --white: #FFFFFF;
+      --envelope-front: #d4c8bb;
+      --envelope-back: #c8baa8;
+      --envelope-flap: #bfb0a0;
+    }
+
+    body {
+      font-family: 'Lato', sans-serif;
+      background-color: var(--cream);
+      color: var(--taupe);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ====== ENVELOPE ====== */
+    .envelope-scene {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .envelope-scene.hidden {
+      opacity: 0;
+      transform: translateY(40px);
+      pointer-events: none;
+    }
+
+    .envelope {
+      width: min(300px, 75vw);
+      aspect-ratio: 4/3;
+      position: relative;
+      cursor: pointer;
+      animation: envelopeSway 3s ease-in-out infinite;
+    }
+
+    @keyframes envelopeSway {
+      0%, 100% { transform: rotate(-1.5deg); }
+      50% { transform: rotate(1.5deg); }
+    }
+
+    .envelope-body {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 70%;
+      background: var(--envelope-front);
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 8px 30px rgba(118, 104, 101, 0.2);
+      z-index: 2;
+    }
+
+    .envelope-back {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 70%;
+      background: var(--envelope-back);
+      border-radius: 0 0 8px 8px;
+      z-index: 0;
+    }
+
+    /* Flap (triangle) */
+    .envelope-flap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 45%;
+      z-index: 3;
+      transform-origin: top center;
+      transition: transform 0.8s ease;
+    }
+
+    .envelope-flap-shape {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Seal */
+    .envelope-seal {
+      position: absolute;
+      top: 28%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 4;
+      width: 50px;
+      height: 50px;
+      background: var(--taupe);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      transition: opacity 0.4s ease;
+    }
+
+    .envelope-seal span {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.75rem;
+      color: var(--white);
+      letter-spacing: 0.05em;
+    }
+
+    /* Card peeking from envelope */
+    .envelope-card-peek {
+      position: absolute;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 50%;
+      background: var(--white);
+      border-radius: 4px 4px 0 0;
+      z-index: 1;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+    }
+
+    .envelope-card-peek-text {
+      position: absolute;
+      top: 30%;
+      width: 100%;
+      text-align: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 0.7rem;
+      color: var(--taupe-light);
+      letter-spacing: 0.1em;
+    }
+
+    .envelope-hint {
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--taupe-light);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    /* Opening animation */
+    .envelope.opening .envelope-flap {
+      transform: rotateX(180deg);
+    }
+
+    .envelope.opening .envelope-seal {
+      opacity: 0;
+    }
+
+    /* ====== CARD ====== */
+    .card-scene {
+      position: relative;
+      z-index: 5;
+      perspective: 1200px;
+      opacity: 0;
+      transform: translateY(60px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+      width: min(380px, 90vw);
+    }
+
+    .card-scene.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .card-flipper {
+      position: relative;
+      width: 100%;
+      transition: transform 0.8s ease;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+
+    .card-flipper.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      width: 100%;
+      backface-visibility: hidden;
+      border-radius: 16px;
+      box-shadow: 0 8px 40px rgba(118, 104, 101, 0.15);
+      overflow: hidden;
+    }
+
+    .card-front {
+      background: var(--white);
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .card-back {
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: var(--white);
+      transform: rotateY(180deg);
+      padding: 2rem 1.5rem;
+      overflow-y: auto;
+      max-height: 85dvh;
+    }
+
+    /* Front content */
+    .card-label {
+      font-weight: 300;
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--taupe-light);
+      margin-bottom: 1rem;
+    }
+
+    .card-photo {
+      width: min(180px, 50vw);
+      aspect-ratio: 3/4;
+      border-radius: 50% 50% 50% 50% / 45% 45% 55% 55%;
+      overflow: hidden;
+      margin-bottom: 1.2rem;
+      box-shadow: 0 4px 20px rgba(118, 104, 101, 0.12);
+    }
+
+    .card-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 20%;
+    }
+
+    .card-invite-text {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 0.9rem;
+      color: var(--taupe-light);
+      margin-bottom: 0.5rem;
+    }
+
+    .card-names {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 7vw, 2.8rem);
+      font-weight: 400;
+      line-height: 1.15;
+      margin-bottom: 0.3rem;
+    }
+
+    .card-names .amp {
+      font-style: italic;
+      font-size: 0.75em;
+      margin: 0 0.1em;
+    }
+
+    .card-date {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.2rem, 4vw, 1.6rem);
+      letter-spacing: 0.08em;
+      margin-top: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-flip-hint {
+      font-size: 0.7rem;
+      color: var(--taupe-light);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .card-flip-hint svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--taupe-light);
+      animation: flipHint 2s ease-in-out infinite;
+    }
+
+    @keyframes flipHint {
+      0%, 100% { transform: rotateY(0); }
+      50% { transform: rotateY(30deg); }
+    }
+
+    /* Back content */
+    .back-section {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .back-section-icon {
+      width: 28px;
+      height: 28px;
+      stroke: var(--taupe);
+      margin-bottom: 0.4rem;
+    }
+
+    .back-section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+
+    .back-section-detail {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: var(--taupe-light);
+    }
+
+    .back-section-detail strong {
+      color: var(--taupe);
+      font-weight: 400;
+    }
+
+    .back-divider {
+      width: 40px;
+      height: 1px;
+      background: var(--taupe-light);
+      opacity: 0.3;
+      margin: 1.2rem auto;
+    }
+
+    .back-dresscode-note {
+      font-size: 0.75rem;
+      color: var(--taupe-light);
+      font-style: italic;
+      line-height: 1.4;
+      margin-top: 0.4rem;
+    }
+
+    /* Gallery in back */
+    .back-gallery {
+      width: 100%;
+      aspect-ratio: 4/3;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .back-gallery img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    .back-gallery img.active {
+      opacity: 1;
+    }
+
+    /* Buttons */
+    .back-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      width: 100%;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.8rem 1.2rem;
+      border-radius: 100px;
+      text-decoration: none;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: all 0.3s ease;
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .btn-primary {
+      background: var(--taupe);
+      color: var(--white);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--taupe);
+      border: 1px solid var(--taupe-light);
+    }
+
+    .back-flip-hint {
+      text-align: center;
+      font-size: 0.65rem;
+      color: var(--taupe-light);
+      margin-top: 1rem;
+      cursor: pointer;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: var(--taupe-light);
+      opacity: 0.4;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="effect-container" id="effectContainer"></div>
+
+  <!-- ENVELOPE -->
+  <div class="envelope-scene" id="envelopeScene">
+    <div class="envelope" id="envelope" onclick="openEnvelope()">
+      <div class="envelope-back"></div>
+      <div class="envelope-card-peek">
+        <div class="envelope-card-peek-text">E & M</div>
+      </div>
+      <div class="envelope-flap">
+        <svg class="envelope-flap-shape" viewBox="0 0 300 100" preserveAspectRatio="none">
+          <polygon points="0,100 150,0 300,100" fill="var(--envelope-flap)"/>
+        </svg>
+      </div>
+      <div class="envelope-body"></div>
+      <div class="envelope-seal"><span>E & M</span></div>
+    </div>
+    <p class="envelope-hint">Toca para abrir</p>
+  </div>
+
+  <!-- CARD -->
+  <div class="card-scene" id="cardScene">
+    <div class="card-flipper" id="cardFlipper">
+      <!-- FRONT -->
+      <div class="card-front">
+        <p class="card-label">Invitaci&oacute;n de boda</p>
+
+        <div class="card-photo">
+          <img src="../images/hero.jpg" alt="Eyla y Mauricio">
+        </div>
+
+        <p class="card-invite-text">Te invitamos a celebrar nuestro matrimonio</p>
+
+        <h1 class="card-names">Eyla <span class="amp">&</span> Mauricio</h1>
+
+        <p class="card-date">6 &middot; junio &middot; 2026</p>
+
+        <div class="card-flip-hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+            <path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+          </svg>
+          Toca para ver los detalles
+        </div>
+      </div>
+
+      <!-- BACK -->
+      <div class="card-back">
+        <!-- Ceremonia -->
+        <div class="back-section">
+          <svg class="back-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 2H6a2 2 0 0 0-2 2v16l8-4 8 4V4a2 2 0 0 0-2-2z"/>
+          </svg>
+          <p class="back-section-title">Ceremonia religiosa</p>
+          <p class="back-section-detail">
+            <strong>4:00 PM</strong> (por confirmar)<br>
+            Lugar por confirmar
+          </p>
+        </div>
+
+        <div class="back-divider"></div>
+
+        <!-- Celebracion -->
+        <div class="back-section">
+          <svg class="back-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 21h8m-4-4v4m-4.5-9.25L12 3l4.5 8.75"/><path d="M6 12h12"/>
+          </svg>
+          <p class="back-section-title">Celebraci&oacute;n</p>
+          <p class="back-section-detail">
+            <strong>6:00 PM</strong><br>
+            Finca Hotel El Sam&aacute;n
+          </p>
+        </div>
+
+        <div class="back-divider"></div>
+
+        <!-- Dresscode -->
+        <div class="back-section">
+          <svg class="back-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46L16 2l-4 2-4-2-4.38 1.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6l-1 12h14l-1-12h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>
+          </svg>
+          <p class="back-section-title">C&oacute;mo vestir</p>
+          <p class="back-section-detail">
+            <strong>Ellos:</strong> traje formal<br>
+            <strong>Ellas:</strong> vestido largo
+          </p>
+          <p class="back-dresscode-note">
+            Evita colores blanco, beige y verde oliva oscuro, reservados para los novios.
+          </p>
+        </div>
+
+        <div class="back-divider"></div>
+
+        <!-- Gallery -->
+        <div class="back-gallery" id="backGallery">
+          <img src="../images/she-looks-at-him.jpg" alt="Eyla y Mauricio" class="active">
+          <img src="../images/face-to-face.jpg" alt="Eyla y Mauricio">
+          <img src="../images/forehead-touch.jpg" alt="Eyla y Mauricio">
+          <img src="../images/kiss-close.jpg" alt="Eyla y Mauricio">
+          <img src="../images/holding-hands.jpg" alt="Eyla y Mauricio">
+          <img src="../images/walking-away.jpg" alt="Eyla y Mauricio">
+        </div>
+
+        <!-- Actions -->
+        <div class="back-actions">
+          <a href="#" id="rsvpLink" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            Confirmar asistencia
+          </a>
+          <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Boda+Eyla+%26+Mauricio&dates=20260606T160000/20260607T030000&details=Ceremonia+4PM.+Celebraci%C3%B3n+6PM+Finca+Hotel+El+Sam%C3%A1n" target="_blank" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Agregar al calendario
+          </a>
+        </div>
+
+        <p class="back-flip-hint" onclick="flipCard()">Toca para volver</p>
+      </div>
+    </div>
+
+    <p class="footer">Eyla & Mauricio &middot; 2026</p>
+  </div>
+
+  <script>
+    // Petals + floral effect
+    var FLORAL_SVG = '<svg class="floral-corner top" viewBox="0 0 200 200" fill="none">' +
+      '<path d="M180 20 C160 40, 140 30, 120 50 C100 70, 110 90, 90 100 C70 110, 50 100, 40 120 C30 140, 50 150, 40 170" stroke="#766865" stroke-width="1.5" fill="none"/>' +
+      '<path d="M190 40 C170 55, 155 45, 140 60 C125 75, 130 90, 115 100" stroke="#766865" stroke-width="1" fill="none"/>' +
+      '<circle cx="120" cy="50" r="8" fill="#766865" opacity="0.3"/>' +
+      '<circle cx="90" cy="100" r="6" fill="#766865" opacity="0.2"/>' +
+      '</svg>' +
+      '<svg class="floral-corner bottom" viewBox="0 0 200 200" fill="none">' +
+      '<path d="M180 20 C160 40, 140 30, 120 50 C100 70, 110 90, 90 100 C70 110, 50 100, 40 120 C30 140, 50 150, 40 170" stroke="#766865" stroke-width="1.5" fill="none"/>' +
+      '<circle cx="120" cy="50" r="8" fill="#766865" opacity="0.3"/>' +
+      '<circle cx="90" cy="100" r="6" fill="#766865" opacity="0.2"/>' +
+      '</svg>';
+
+    var container = document.getElementById('effectContainer');
+    container.innerHTML = FLORAL_SVG;
+    for (var i = 0; i < 12; i++) {
+      var el = document.createElement('div');
+      el.className = 'petal';
+      el.style.left = Math.random() * 100 + '%';
+      el.style.animationDuration = (8 + Math.random() * 12) + 's';
+      el.style.animationDelay = (Math.random() * 10) + 's';
+      el.style.width = (8 + Math.random() * 8) + 'px';
+      el.style.height = (10 + Math.random() * 10) + 'px';
+      container.appendChild(el);
+    }
+
+    // Envelope open
+    function openEnvelope() {
+      var envelope = document.getElementById('envelope');
+      if (envelope.classList.contains('opening')) return;
+      envelope.classList.add('opening');
+
+      setTimeout(function() {
+        document.getElementById('envelopeScene').classList.add('hidden');
+      }, 800);
+
+      setTimeout(function() {
+        document.getElementById('cardScene').classList.add('visible');
+      }, 1200);
+    }
+
+    // Card flip
+    function flipCard() {
+      var flipper = document.getElementById('cardFlipper');
+      flipper.classList.toggle('flipped');
+    }
+
+    // Click on card front to flip
+    document.querySelector('.card-front').addEventListener('click', function() {
+      flipCard();
+    });
+
+    // Prevent flip when clicking buttons on back
+    document.querySelectorAll('.btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+      });
+    });
+
+    // Gallery slideshow (back)
+    var slides = document.querySelectorAll('#backGallery img');
+    var current = 0;
+    setInterval(function() {
+      slides[current].classList.remove('active');
+      current = (current + 1) % slides.length;
+      slides[current].classList.add('active');
+    }, 2500);
+
+    // Pass code to RSVP link
+    var code = new URLSearchParams(window.location.search).get('code');
+    var rsvpLink = document.getElementById('rsvpLink');
+    if (code) {
+      rsvpLink.href = '../rsvp.html?code=' + encodeURIComponent(code);
+    } else {
+      rsvpLink.href = '../rsvp.html';
+    }
+  </script>
+
+</body>
+</html>
