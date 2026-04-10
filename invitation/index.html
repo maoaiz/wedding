@@ -65,7 +65,7 @@
       animation: envelopeSway 3s ease-in-out infinite;
     }
 
-    .envelope.opened { animation: none; cursor: default; }
+    .envelope.opened { animation: none; }
 
     @keyframes envelopeSway {
       0%, 100% { transform: rotate(-1.5deg); }
@@ -95,7 +95,7 @@
 
     .envelope-flap svg { width: 100%; height: 100%; display: block; }
 
-    .envelope.opened .envelope-flap { transform: rotateX(180deg); z-index: 0; }
+    .envelope.opened .envelope-flap { transform: rotateX(180deg); z-index: -1; }
 
     .envelope-seal {
       position: absolute;
@@ -423,16 +423,12 @@
         </div>
       </div>
 
-      <div style="text-align:center; padding: 1rem 0 0.5rem;">
-        <button class="btn-close-envelope" onclick="closeEnvelope()">Guardar en el sobre</button>
-      </div>
-
       <p class="inv-footer">Eyla & Mauricio &middot; 2026</p>
     </div>
 
     <!-- ENVELOPE -->
     <div class="envelope-wrapper" id="envelopeWrapper">
-      <div class="envelope" id="envelope" onclick="openEnvelope()">
+      <div class="envelope" id="envelope" onclick="toggleEnvelope()">
         <svg class="envelope-sides" viewBox="0 0 520 370" preserveAspectRatio="none">
           <polygon points="0,370 260,170 520,370" fill="var(--envelope-front)" opacity="0.9"/>
           <polygon points="0,0 260,185 0,370" fill="var(--envelope-front)" opacity="0.85"/>
@@ -476,9 +472,12 @@
     }
 
     // Open envelope
-    function openEnvelope() {
+    function toggleEnvelope() {
       var envelope = document.getElementById('envelope');
-      if (envelope.classList.contains('opened')) return;
+      if (envelope.classList.contains('opened')) {
+        closeEnvelope();
+        return;
+      }
 
       // Open flap
       envelope.classList.add('opened');
