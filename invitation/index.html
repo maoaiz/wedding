@@ -210,6 +210,7 @@
 
     .card-front, .card-back {
       width: 100%;
+      height: 680px;
       backface-visibility: hidden;
       border-radius: 16px;
       box-shadow: 0 8px 40px rgba(118, 104, 101, 0.15);
@@ -222,6 +223,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       text-align: center;
     }
 
@@ -233,6 +235,7 @@
       background: var(--white);
       transform: rotateY(180deg);
       padding: 1.5rem 1.2rem;
+      overflow-y: auto;
     }
 
     /* Front content */
@@ -289,6 +292,48 @@
       letter-spacing: 0.08em;
       margin-top: 0.5rem;
       margin-bottom: 1.5rem;
+    }
+
+    /* Countdown */
+    .card-countdown {
+      margin-bottom: 1.2rem;
+    }
+
+    .countdown-label {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.85rem;
+      color: var(--taupe-light);
+      margin-bottom: 0.3rem;
+    }
+
+    .countdown-items {
+      display: flex;
+      gap: 0;
+    }
+
+    .cd-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 0.8rem;
+    }
+
+    .cd-item:not(:last-child) {
+      border-right: 1px solid var(--taupe-light);
+    }
+
+    .cd-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--taupe);
+      line-height: 1;
+    }
+
+    .cd-unit {
+      font-size: 0.6rem;
+      color: var(--taupe-light);
+      letter-spacing: 0.05em;
+      margin-top: 0.15rem;
     }
 
     .card-flip-hint {
@@ -348,6 +393,14 @@
       background: var(--taupe-light);
       opacity: 0.3;
       margin: 0.6rem auto;
+    }
+
+    .map-link {
+      display: inline-block;
+      margin-top: 0.3rem;
+      font-size: 0.75rem;
+      color: var(--taupe);
+      text-decoration: underline;
     }
 
     .back-dresscode-note {
@@ -485,6 +538,16 @@
 
         <p class="card-date">6 &middot; junio &middot; 2026</p>
 
+        <div class="card-countdown">
+          <p class="countdown-label">Faltan</p>
+          <div class="countdown-items">
+            <div class="cd-item"><span class="cd-num" id="cd-days">--</span><span class="cd-unit">d&iacute;as</span></div>
+            <div class="cd-item"><span class="cd-num" id="cd-hours">--</span><span class="cd-unit">hrs</span></div>
+            <div class="cd-item"><span class="cd-num" id="cd-mins">--</span><span class="cd-unit">min</span></div>
+            <div class="cd-item"><span class="cd-num" id="cd-secs">--</span><span class="cd-unit">seg</span></div>
+          </div>
+        </div>
+
         <div class="card-flip-hint">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
@@ -504,7 +567,8 @@
           <p class="back-section-title">Ceremonia religiosa</p>
           <p class="back-section-detail">
             <strong>4:00 PM</strong> (por confirmar)<br>
-            Lugar por confirmar
+            Parroquia La Inmaculada Concepci&oacute;n (Belmonte)<br>
+            <a href="https://maps.app.goo.gl/bWnuCXZY2rZQ8fgn7" target="_blank" class="map-link" onclick="event.stopPropagation()">Ver en Google Maps</a>
           </p>
         </div>
 
@@ -518,7 +582,8 @@
           <p class="back-section-title">Celebraci&oacute;n</p>
           <p class="back-section-detail">
             <strong>6:00 PM</strong><br>
-            Finca Hotel El Sam&aacute;n
+            Finca Hotel El Sam&aacute;n<br>
+            <a href="https://maps.app.goo.gl/SjxPUouAF1X3THHe9" target="_blank" class="map-link" onclick="event.stopPropagation()">Ver en Google Maps</a>
           </p>
         </div>
 
@@ -647,6 +712,20 @@
       current = (current + 1) % slides.length;
       slides[current].classList.add('active');
     }, 2500);
+
+    // Countdown
+    function updateCountdown() {
+      var wedding = new Date('2026-06-06T16:00:00-05:00').getTime();
+      var now = new Date().getTime();
+      var diff = wedding - now;
+      if (diff <= 0) return;
+      document.getElementById('cd-days').textContent = Math.floor(diff / (1000*60*60*24));
+      document.getElementById('cd-hours').textContent = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
+      document.getElementById('cd-mins').textContent = Math.floor((diff % (1000*60*60)) / (1000*60));
+      document.getElementById('cd-secs').textContent = Math.floor((diff % (1000*60)) / 1000);
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
 
     // Pass code to RSVP link
     var code = new URLSearchParams(window.location.search).get('code');
