@@ -32,8 +32,9 @@
       min-height: 100dvh;
       overflow-x: hidden;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
+      padding: 2rem 0 3rem;
     }
 
     /* ====== ENVELOPE ====== */
@@ -55,8 +56,8 @@
     }
 
     .envelope {
-      width: min(300px, 75vw);
-      aspect-ratio: 4/3;
+      width: min(520px, 85vw);
+      height: min(370px, 60vw);
       position: relative;
       cursor: pointer;
       animation: envelopeSway 3s ease-in-out infinite;
@@ -67,34 +68,57 @@
       50% { transform: rotate(1.5deg); }
     }
 
+    /* Back panel (behind everything) */
+    .envelope-back {
+      position: absolute;
+      inset: 0;
+      background: var(--envelope-back);
+      border-radius: 8px;
+      z-index: 0;
+    }
+
+    /* Card peeking out the top */
+    .envelope-card-peek {
+      position: absolute;
+      top: 5%;
+      left: 8%;
+      width: 84%;
+      height: 30%;
+      background: var(--white);
+      border-radius: 6px 6px 0 0;
+      z-index: 1;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .envelope-card-peek-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.85rem;
+      color: var(--taupe-light);
+      letter-spacing: 0.15em;
+    }
+
+    /* Front body (covers bottom half of card) */
     .envelope-body {
       position: absolute;
       bottom: 0;
       width: 100%;
-      height: 70%;
+      height: 65%;
       background: var(--envelope-front);
       border-radius: 0 0 8px 8px;
-      box-shadow: 0 8px 30px rgba(118, 104, 101, 0.2);
       z-index: 2;
+      box-shadow: 0 8px 30px rgba(118, 104, 101, 0.2);
     }
 
-    .envelope-back {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 70%;
-      background: var(--envelope-back);
-      border-radius: 0 0 8px 8px;
-      z-index: 0;
-    }
-
-    /* Flap (triangle) */
+    /* Flap (triangle pointing down, closed) */
     .envelope-flap {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      height: 45%;
+      height: 55%;
       z-index: 3;
       transform-origin: top center;
       transition: transform 0.8s ease;
@@ -103,60 +127,37 @@
     .envelope-flap-shape {
       width: 100%;
       height: 100%;
+      display: block;
     }
 
-    /* Seal */
+    /* Seal on top of flap */
     .envelope-seal {
       position: absolute;
-      top: 28%;
+      top: 38%;
       left: 50%;
       transform: translateX(-50%);
       z-index: 4;
-      width: 50px;
-      height: 50px;
+      width: 56px;
+      height: 56px;
       background: var(--taupe);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
       transition: opacity 0.4s ease;
     }
 
     .envelope-seal span {
       font-family: 'Playfair Display', serif;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       color: var(--white);
-      letter-spacing: 0.05em;
-    }
-
-    /* Card peeking from envelope */
-    .envelope-card-peek {
-      position: absolute;
-      top: 10%;
-      left: 10%;
-      width: 80%;
-      height: 50%;
-      background: var(--white);
-      border-radius: 4px 4px 0 0;
-      z-index: 1;
-      box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
-    }
-
-    .envelope-card-peek-text {
-      position: absolute;
-      top: 30%;
-      width: 100%;
-      text-align: center;
-      font-family: 'Playfair Display', serif;
-      font-size: 0.7rem;
-      color: var(--taupe-light);
-      letter-spacing: 0.1em;
+      letter-spacing: 0.08em;
     }
 
     .envelope-hint {
-      margin-top: 1.5rem;
-      font-size: 0.8rem;
+      margin-top: 2rem;
+      font-size: 0.85rem;
       color: var(--taupe-light);
       animation: pulse 2s ease-in-out infinite;
     }
@@ -167,6 +168,10 @@
     }
 
     /* Opening animation */
+    .envelope.opening {
+      animation: none;
+    }
+
     .envelope.opening .envelope-flap {
       transform: rotateX(180deg);
     }
@@ -183,7 +188,7 @@
       opacity: 0;
       transform: translateY(60px);
       transition: opacity 0.8s ease, transform 0.8s ease;
-      width: min(380px, 90vw);
+      width: min(500px, 92vw);
     }
 
     .card-scene.visible {
@@ -224,11 +229,10 @@
       position: absolute;
       top: 0;
       left: 0;
+      width: 100%;
       background: var(--white);
       transform: rotateY(180deg);
-      padding: 2rem 1.5rem;
-      overflow-y: auto;
-      max-height: 85dvh;
+      padding: 1.5rem 1.2rem;
     }
 
     /* Front content */
@@ -310,7 +314,7 @@
     /* Back content */
     .back-section {
       text-align: center;
-      margin-bottom: 1.5rem;
+      margin-bottom: 0.8rem;
     }
 
     .back-section-icon {
@@ -343,7 +347,7 @@
       height: 1px;
       background: var(--taupe-light);
       opacity: 0.3;
-      margin: 1.2rem auto;
+      margin: 0.6rem auto;
     }
 
     .back-dresscode-note {
@@ -357,11 +361,11 @@
     /* Gallery in back */
     .back-gallery {
       width: 100%;
-      aspect-ratio: 4/3;
+      aspect-ratio: 16/9;
       border-radius: 10px;
       overflow: hidden;
       position: relative;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     }
 
     .back-gallery img {
@@ -429,12 +433,16 @@
 
     /* Footer */
     .footer {
+      position: fixed;
+      bottom: 0.5rem;
+      left: 0;
+      width: 100%;
       text-align: center;
-      margin-top: 1.5rem;
       font-size: 0.6rem;
       letter-spacing: 0.1em;
       color: var(--taupe-light);
       opacity: 0.4;
+      z-index: 1;
     }
   </style>
 </head>
@@ -447,14 +455,14 @@
     <div class="envelope" id="envelope" onclick="openEnvelope()">
       <div class="envelope-back"></div>
       <div class="envelope-card-peek">
-        <div class="envelope-card-peek-text">E & M</div>
-      </div>
-      <div class="envelope-flap">
-        <svg class="envelope-flap-shape" viewBox="0 0 300 100" preserveAspectRatio="none">
-          <polygon points="0,100 150,0 300,100" fill="var(--envelope-flap)"/>
-        </svg>
+        <span class="envelope-card-peek-text">E & M</span>
       </div>
       <div class="envelope-body"></div>
+      <div class="envelope-flap">
+        <svg class="envelope-flap-shape" viewBox="0 0 340 132" preserveAspectRatio="none">
+          <polygon points="0,0 170,132 340,0" fill="var(--envelope-flap)"/>
+        </svg>
+      </div>
       <div class="envelope-seal"><span>E & M</span></div>
     </div>
     <p class="envelope-hint">Toca para abrir</p>
@@ -567,8 +575,9 @@
       </div>
     </div>
 
-    <p class="footer">Eyla & Mauricio &middot; 2026</p>
   </div>
+
+  <p class="footer">Eyla & Mauricio &middot; 2026</p>
 
   <script>
     // Petals + floral effect
