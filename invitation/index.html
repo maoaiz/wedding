@@ -42,11 +42,12 @@
       align-items: center;
       min-height: 100dvh;
       padding: 2rem 0;
+      transition: padding-top 1.2s ease;
     }
 
-    /* Initially centered vertically */
+    /* Initially centered vertically via padding */
     .page.closed {
-      justify-content: center;
+      padding-top: calc(50dvh - min(185px, 30vw) - 2rem);
     }
 
     /* ====== ENVELOPE ====== */
@@ -149,20 +150,21 @@
       position: relative;
       border: 2px solid rgba(92, 107, 79, 0.15);
 
-      /* Start small, inside the envelope */
+      /* Start inside the envelope */
       max-height: 0;
       opacity: 0;
-      transform: scale(0.6);
-      transform-origin: center bottom;
-      transition: max-height 1.2s ease, opacity 0.8s ease 0.3s, transform 1.2s ease, margin 1.2s ease;
-      margin-bottom: 0;
+      overflow: hidden;
+      margin-bottom: -20px;
+      /* Closing: opacity stays visible until card is inside */
+      transition: max-height 2s cubic-bezier(0.25, 0.46, 0.45, 0.94), margin 2s ease, opacity 0.3s ease 1.8s;
     }
 
     .invitation.visible {
       max-height: 5000px;
       opacity: 1;
-      transform: scale(1);
       margin-bottom: 2rem;
+      /* Opening: opacity appears quickly */
+      transition: max-height 2s cubic-bezier(0.25, 0.46, 0.45, 0.94), margin 2s ease, opacity 0.3s ease;
     }
 
     /* Decorative floral corners */
@@ -497,13 +499,15 @@
 
     // Close envelope
     function closeEnvelope() {
+      // Center envelope and collapse card at the same time
+      document.getElementById('page').classList.add('closed');
       document.getElementById('invitation').classList.remove('visible');
 
+      // Close flap after card enters
       setTimeout(function() {
-        document.getElementById('page').classList.add('closed');
         document.getElementById('envelope').classList.remove('opened');
         document.getElementById('envelopeHint').classList.remove('hidden');
-      }, 1000);
+      }, 2500);
     }
 
     // Fade-in on scroll
