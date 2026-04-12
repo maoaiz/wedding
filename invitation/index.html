@@ -10,7 +10,7 @@
   <meta property="og:image" content="../images/hero.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../effects/petals-floral.css">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -125,13 +125,20 @@
     }
 
     .envelope-name {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.1rem;
-      color: var(--taupe);
-      margin-top: 1rem;
+      position: absolute;
+      bottom: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 7;
+      font-family: 'Great Vibes', cursive;
+      font-size: 1.9rem;
+      color: var(--white);
       letter-spacing: 0.05em;
+      white-space: nowrap;
       opacity: 0;
       transition: opacity 0.6s ease;
+      pointer-events: none;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
     .envelope-name.loaded { opacity: 1; }
 
@@ -507,8 +514,8 @@
           </svg>
         </div>
         <div class="envelope-seal"><span>E & M</span></div>
+        <p class="envelope-name" id="envelopeName"></p>
       </div>
-      <p class="envelope-name" id="envelopeName"></p>
       <p class="envelope-hint" id="envelopeHint">
         <span class="hint-closed">Toca para abrir</span>
         <span class="hint-open">Toca el sobre para guardar la tarjeta</span>
