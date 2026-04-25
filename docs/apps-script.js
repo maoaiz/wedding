@@ -592,7 +592,8 @@ function generateWhatsAppMessagesRemote() {
   var col = {};
   headers.forEach(function(h, i) { col[h] = i; });
 
-  var baseUrl = 'https://maoaiz.github.io/wedding/?code=';
+  var baseUrl = 'https://maoaiz.github.io/wedding/invitation/?code=';
+  var saveTheDateUrl = 'https://maoaiz.github.io/wedding/?code=';
   var groups = {};
 
   for (var i = 1; i < data.length; i++) {
@@ -611,8 +612,8 @@ function generateWhatsAppMessagesRemote() {
   if (!msgSheet) msgSheet = ss.insertSheet('Mensajes');
   else msgSheet.clearContents();
 
-  msgSheet.getRange(1, 1, 1, 2).setValues([['Grupo', 'Invitaci\u00f3n']]);
-  msgSheet.getRange(1, 1, 1, 2).setFontWeight('bold');
+  msgSheet.getRange(1, 1, 1, 3).setValues([['Grupo', 'Invitaci\u00f3n', 'Save the date']]);
+  msgSheet.getRange(1, 1, 1, 3).setFontWeight('bold');
 
   var ring = String.fromCodePoint(0x1F48D);
   var bride = String.fromCodePoint(0x1F470);
@@ -642,10 +643,13 @@ function generateWhatsAppMessagesRemote() {
       msgSheet.getRange(row, 1).setFontColor('#cccccc');
     }
     msgSheet.getRange(row, 2).setFormula('=HYPERLINK("' + url + '", "Ver invitaci\u00f3n")');
+    var stdUrl = saveTheDateUrl + info.code;
+    msgSheet.getRange(row, 3).setFormula('=HYPERLINK("' + stdUrl + '", "Ver save the date")');
   });
 
   msgSheet.setColumnWidth(1, 280);
-  msgSheet.setColumnWidth(2, 120);
+  msgSheet.setColumnWidth(2, 140);
+  msgSheet.setColumnWidth(3, 150);
 }
 
 function createResumenRemote() {
