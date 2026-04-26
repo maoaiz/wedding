@@ -11,7 +11,8 @@
 // 5. Copy the deployment URL and paste it in rsvp.html
 //
 // Columnas del tab "Invitados":
-// Nombre | Apellido | Etiqueta | Telefono | Grupo | codigo | es_nino | confirmado | menu | notas | actualizado | visitas
+// Nombre | Apellido | Etiqueta | Telefono | Grupo | codigo | es_nino | confirmado | menu | notas | actualizado | visitas | ultima_visita
+// (ultima_visita es opcional; si la columna existe, doGet la actualiza al timestamp de cada visita)
 
 var SHEET_NAME = 'Invitados';
 
@@ -110,13 +111,17 @@ function doGet(e) {
     return respondGet({ error: 'not_found' }, callback);
   }
 
-  // Increment visit counter
-  if (col['visitas'] !== undefined) {
-    visitRows.forEach(function(rowNum) {
+  // Increment visit counter and stamp last-visit date (per row in the group)
+  var nowVisit = new Date();
+  visitRows.forEach(function(rowNum) {
+    if (col['visitas'] !== undefined) {
       var currentVisits = Number(data[rowNum - 1][col['visitas']]) || 0;
       sheet.getRange(rowNum, col['visitas'] + 1).setValue(currentVisits + 1);
-    });
-  }
+    }
+    if (col['ultima_visita'] !== undefined) {
+      sheet.getRange(rowNum, col['ultima_visita'] + 1).setValue(nowVisit);
+    }
+  });
 
   return respondGet({
     familia: groupName,
@@ -283,76 +288,8 @@ function jsonResponse(data) {
 
 // Create or update Resumen tab with summary formulas
 function createResumen() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_NAME);
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-
-  // Find column letters
-  var colLetter = {};
-  headers.forEach(function(h, i) {
-    colLetter[h] = String.fromCharCode(65 + i); // A, B, C...
-    if (i >= 26) colLetter[h] = 'A' + String.fromCharCode(65 + i - 26); // AA, AB...
-  });
-
-  var conf = colLetter['confirmado'];
-  var menu = colLetter['menu'];
-  var nino = colLetter['es_nino'];
-  var nombre = colLetter['Nombre'];
-  var etiqueta = colLetter['Etiqueta'];
-  var visitas = colLetter['visitas'];
-
-  var resSheet = ss.getSheetByName('Resumen');
-  if (!resSheet) {
-    resSheet = ss.insertSheet('Resumen');
-  } else {
-    resSheet.clearContents();
-  }
-
-  var data = [
-    ['RESUMEN GENERAL', ''],
-    ['', ''],
-    ['Total invitados', '=COUNTA(Invitados!' + nombre + '2:' + nombre + ')'],
-    ['Confirmados (si)', '=COUNTIF(Invitados!' + conf + '2:' + conf + ', "si")'],
-    ['No asisten', '=COUNTIF(Invitados!' + conf + '2:' + conf + ', "no")'],
-    ['A\u00fan no saben', '=COUNTIF(Invitados!' + conf + '2:' + conf + ', "tal_vez")'],
-    ['Sin responder', '=COUNTA(Invitados!' + nombre + '2:' + nombre + ')-COUNTIF(Invitados!' + conf + '2:' + conf + ',"si")-COUNTIF(Invitados!' + conf + '2:' + conf + ',"no")-COUNTIF(Invitados!' + conf + '2:' + conf + ',"tal_vez")'],
-    ['', ''],
-    ['MENUS', ''],
-    ['Normal', '=COUNTIF(Invitados!' + menu + '2:' + menu + ', "normal")'],
-    ['Vegetariano', '=COUNTIF(Invitados!' + menu + '2:' + menu + ', "vegetariano")'],
-    ['Infantil', '=COUNTIF(Invitados!' + menu + '2:' + menu + ', "infantil")'],
-    ['', ''],
-    ['NI\u00d1OS', ''],
-    ['Total ni\u00f1os', '=COUNTIF(Invitados!' + nino + '2:' + nino + ', "Si")'],
-    ['', ''],
-    ['POR ETIQUETA', ''],
-    ['Brice\u00f1os', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Brice\u00f1os*")'],
-    ['Amigos Eyla', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Amigos Eyla*")'],
-    ['Amigos Mauricio', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Amigos Mauricio*")'],
-    ['Pekin', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Pekin*")'],
-    ['Astros', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Astros*")'],
-    ['Aizagas', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Aizagas*")'],
-    ['iKono', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*iKono*")'],
-    ['UTP', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*UTP*")'],
-    ['Pasto', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Pasto*")'],
-    ['', ''],
-    ['ENGAGEMENT', ''],
-    ['Invitados que han abierto el enlace', '=COUNTIF(Invitados!' + visitas + '2:' + visitas + ', ">"&0)'],
-    ['Total visitas', '=SUM(Invitados!' + visitas + '2:' + visitas + ')'],
-  ];
-
-  resSheet.getRange(1, 1, data.length, 2).setValues(data);
-
-  // Format headers
-  var boldRows = [1, 9, 14, 17, 28];
-  boldRows.forEach(function(r) {
-    resSheet.getRange(r, 1, 1, 2).setFontWeight('bold');
-  });
-
-  resSheet.setColumnWidth(1, 280);
-  resSheet.setColumnWidth(2, 100);
-
-  SpreadsheetApp.getUi().alert('Pesta\u00f1a Resumen creada.');
+  createResumenRemote();
+  SpreadsheetApp.getUi().alert('Pesta\u00f1a Resumen actualizada.');
 }
 
 // Setup table management: creates "Mesas" config tab, dropdown validation, and conditional formatting
@@ -600,11 +537,15 @@ function generateWhatsAppMessagesRemote() {
     var group = String(data[i][col['Grupo']]).trim();
     var code = String(data[i][col['codigo']]).trim();
     var phone = String(data[i][col['Telefono']]).trim();
+    var confirmado = String(data[i][col['confirmado']]).trim().toLowerCase();
     if (group && !groups[group]) {
-      groups[group] = { code: code, phone: '' };
+      groups[group] = { code: code, phone: '', hasSiNo: false };
     }
     if (!groups[group].phone && phone && phone !== '' && phone !== 'undefined') {
       groups[group].phone = phone;
+    }
+    if (confirmado === 'si' || confirmado === 'no') {
+      groups[group].hasSiNo = true;
     }
   }
 
@@ -616,12 +557,12 @@ function generateWhatsAppMessagesRemote() {
   msgSheet.getRange(1, 1, 1, 3).setFontWeight('bold');
 
   var ring = String.fromCodePoint(0x1F48D);
-  var bride = String.fromCodePoint(0x1F470);
-  var groom = String.fromCodePoint(0x1F935);
-  var party = String.fromCodePoint(0x1F389);
+  var partying = String.fromCodePoint(0x1F973);
+  var manDance = String.fromCodePoint(0x1F57A) + String.fromCodePoint(0x1F3FD);
+  var womanDance = String.fromCodePoint(0x1F483) + String.fromCodePoint(0x1F3FC);
   var heart = String.fromCodePoint(0x2764) + String.fromCodePoint(0xFE0F);
   var down = String.fromCodePoint(0x1F447);
-  var pray = String.fromCodePoint(0x1F64F);
+  var smiley = String.fromCodePoint(0x263A) + String.fromCodePoint(0xFE0F);
 
   var entries = Object.entries(groups);
   entries.forEach(function(entry, i) {
@@ -629,8 +570,11 @@ function generateWhatsAppMessagesRemote() {
     var info = entry[1];
     var url = baseUrl + info.code;
     var message = 'Hola ' + group + '! ' + heart + '\n\n' +
-      'Tenemos una invitaci\u00f3n muy especial para ti. ' + ring + '\n\n' +
-      'Abre aqu\u00ed para ver todos los detalles ' + down + '\n' + url;
+      '\u00a1Ya tenemos todos los detalles!' + ring + partying + manDance + womanDance + '\n\n' +
+      'Abre aqu\u00ed para verlos ' + down + '\n' + url;
+    if (!info.hasSiNo) {
+      message += '\n\nEn caso de no obtener respuesta entenderemos que no podr\u00e1s acompa\u00f1arnos presencialmente, no te preocupes por eso, no es ning\u00fan problema ' + smiley;
+    }
     var encodedMsg = encodeURIComponent(message);
     var cleanPhone = info.phone ? info.phone.replace(/[^0-9]/g, '') : '';
     var waLink = cleanPhone ? 'https://wa.me/' + cleanPhone + '?text=' + encodedMsg : '';
@@ -672,46 +616,103 @@ function createResumenRemote() {
 
   var resSheet = ss.getSheetByName('Resumen');
   if (!resSheet) resSheet = ss.insertSheet('Resumen');
-  else resSheet.clearContents();
+  else { resSheet.clearContents(); resSheet.clearFormats(); }
+
+  // Helper to build range strings (e.g. "Invitados!H2:H")
+  var range = function(letter) { return 'Invitados!' + letter + '2:' + letter; };
+  var total = 'COUNTA(' + range(nombre) + ')';
+  var nSi = 'COUNTIF(' + range(conf) + ',"si")';
+  var nNo = 'COUNTIF(' + range(conf) + ',"no")';
+  var nTalVez = 'COUNTIF(' + range(conf) + ',"tal_vez")';
+  var nResp = '(' + nSi + '+' + nNo + '+' + nTalVez + ')';
+  var nPend = '(' + total + '-' + nResp + ')';
+  var nNinos = 'COUNTIF(' + range(nino) + ',"Si")';
+  var nNinosSi = 'COUNTIFS(' + range(nino) + ',"Si",' + range(conf) + ',"si")';
+  var nVisitados = 'COUNTIF(' + range(visitas) + ',">0")';
+
+  var tagRow = function(label, pattern, base) {
+    var formula = 'COUNTIF(' + range(etiqueta) + ',"*' + pattern + '*")';
+    return [label, '=' + formula, '=IFERROR(' + formula + '/' + base + ',0)'];
+  };
+
+  var tagConfirmedRow = function(label, pattern) {
+    var match = 'COUNTIFS(' + range(etiqueta) + ',"*' + pattern + '*",' + range(conf) + ',"si")';
+    var totalTag = 'COUNTIF(' + range(etiqueta) + ',"*' + pattern + '*")';
+    return [label, '=' + match, '=IFERROR(' + match + '/' + totalTag + ',0)'];
+  };
 
   var data = [
-    ['RESUMEN GENERAL', ''],
-    ['', ''],
-    ['Total invitados', '=COUNTA(Invitados!' + nombre + '2:' + nombre + ')'],
-    ['Confirmados (si)', '=COUNTIF(Invitados!' + conf + '2:' + conf + ', "si")'],
-    ['No asisten', '=COUNTIF(Invitados!' + conf + '2:' + conf + ', "no")'],
-    ['A\u00fan no saben', '=COUNTIF(Invitados!' + conf + '2:' + conf + ', "tal_vez")'],
-    ['Sin responder', '=COUNTA(Invitados!' + nombre + '2:' + nombre + ')-COUNTIF(Invitados!' + conf + '2:' + conf + ',"si")-COUNTIF(Invitados!' + conf + '2:' + conf + ',"no")-COUNTIF(Invitados!' + conf + '2:' + conf + ',"tal_vez")'],
-    ['', ''],
-    ['MENUS', ''],
-    ['Normal', '=COUNTIF(Invitados!' + menu + '2:' + menu + ', "normal")'],
-    ['Vegetariano', '=COUNTIF(Invitados!' + menu + '2:' + menu + ', "vegetariano")'],
-    ['Infantil', '=COUNTIF(Invitados!' + menu + '2:' + menu + ', "infantil")'],
-    ['', ''],
-    ['NI\u00d1OS', ''],
-    ['Total ni\u00f1os', '=COUNTIF(Invitados!' + nino + '2:' + nino + ', "Si")'],
-    ['', ''],
-    ['POR ETIQUETA', ''],
-    ['Brice\u00f1os', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Brice\u00f1os*")'],
-    ['Amigos Eyla', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Amigos Eyla*")'],
-    ['Amigos Mauricio', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Amigos Mauricio*")'],
-    ['Pekin', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Pekin*")'],
-    ['Astros', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Astros*")'],
-    ['Aizagas', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Aizagas*")'],
-    ['iKono', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*iKono*")'],
-    ['UTP', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*UTP*")'],
-    ['Pasto', '=COUNTIF(Invitados!' + etiqueta + '2:' + etiqueta + ', "*Pasto*")'],
-    ['', ''],
-    ['ENGAGEMENT', ''],
-    ['Han abierto el enlace', '=COUNTIF(Invitados!' + visitas + '2:' + visitas + ', ">"&0)'],
-    ['Total visitas', '=SUM(Invitados!' + visitas + '2:' + visitas + ')'],
+    ['RESUMEN', 'Cantidad', '%'],
+    ['', '', ''],
+    ['Total invitados', '=' + total, ''],
+    ['Confirmados (s\u00ed)', '=' + nSi, '=' + nSi + '/' + total],
+    ['No asisten', '=' + nNo, '=' + nNo + '/' + total],
+    ['A\u00fan no saben', '=' + nTalVez, '=' + nTalVez + '/' + total],
+    ['Sin responder', '=' + nPend, '=' + nPend + '/' + total],
+    ['', '', ''],
+    ['TASA DE RESPUESTA', '', ''],
+    ['Han respondido', '=' + nResp, '=' + nResp + '/' + total],
+    ['Pendientes', '=' + nPend, '=' + nPend + '/' + total],
+    ['', '', ''],
+    ['ASISTENCIA ESPERADA', '', ''],
+    ['M\u00ednima (solo confirmados)', '=' + nSi, '=' + nSi + '/' + total],
+    ['Probable (confirmados + 50% tal vez)', '=' + nSi + '+ROUND(' + nTalVez + '*0.5)', '=(' + nSi + '+ROUND(' + nTalVez + '*0.5))/' + total],
+    ['M\u00e1xima (confirmados + tal vez)', '=' + nSi + '+' + nTalVez, '=(' + nSi + '+' + nTalVez + ')/' + total],
+    ['', '', ''],
+    ['MEN\u00daS (de confirmados)', '', ''],
+    ['Normal', '=COUNTIF(' + range(menu) + ',"normal")', '=IFERROR(COUNTIF(' + range(menu) + ',"normal")/' + nSi + ',0)'],
+    ['Vegetariano', '=COUNTIF(' + range(menu) + ',"vegetariano")', '=IFERROR(COUNTIF(' + range(menu) + ',"vegetariano")/' + nSi + ',0)'],
+    ['Infantil', '=COUNTIF(' + range(menu) + ',"infantil")', '=IFERROR(COUNTIF(' + range(menu) + ',"infantil")/' + nSi + ',0)'],
+    ['Sin definir', '=' + nSi + '-COUNTIF(' + range(menu) + ',"normal")-COUNTIF(' + range(menu) + ',"vegetariano")-COUNTIF(' + range(menu) + ',"infantil")', '=IFERROR((' + nSi + '-COUNTIF(' + range(menu) + ',"normal")-COUNTIF(' + range(menu) + ',"vegetariano")-COUNTIF(' + range(menu) + ',"infantil"))/' + nSi + ',0)'],
+    ['', '', ''],
+    ['DEMOGRAF\u00cdA', '', ''],
+    ['Ni\u00f1os invitados', '=' + nNinos, '=' + nNinos + '/' + total],
+    ['Adultos invitados', '=' + total + '-' + nNinos, '=(' + total + '-' + nNinos + ')/' + total],
+    ['Ni\u00f1os confirmados', '=' + nNinosSi, '=IFERROR(' + nNinosSi + '/' + nNinos + ',0)'],
+    ['Adultos confirmados', '=' + nSi + '-' + nNinosSi, '=IFERROR((' + nSi + '-' + nNinosSi + ')/(' + total + '-' + nNinos + '),0)'],
+    ['', '', ''],
+    ['POR ETIQUETA (total / % confirmaci\u00f3n)', '', ''],
+    tagConfirmedRow('Brice\u00f1os', 'Brice\u00f1os'),
+    tagConfirmedRow('Amigos Eyla', 'Amigos Eyla'),
+    tagConfirmedRow('Amigos Mauricio', 'Amigos Mauricio'),
+    tagConfirmedRow('Pekin', 'Pekin'),
+    tagConfirmedRow('Astros', 'Astros'),
+    tagConfirmedRow('Aizagas', 'Aizagas'),
+    tagConfirmedRow('iKono', 'iKono'),
+    tagConfirmedRow('UTP', 'UTP'),
+    tagConfirmedRow('Pasto', 'Pasto'),
+    ['', '', ''],
+    ['ENGAGEMENT', '', ''],
+    ['Han abierto el enlace', '=' + nVisitados, '=' + nVisitados + '/' + total],
+    ['Abrieron pero no respondieron', '=COUNTIFS(' + range(visitas) + ',">0",' + range(conf) + ',"")', '=IFERROR(COUNTIFS(' + range(visitas) + ',">0",' + range(conf) + ',"")/' + nVisitados + ',0)'],
+    ['Total visitas', '=SUM(' + range(visitas) + ')', ''],
+    ['Promedio visitas / invitado que abri\u00f3', '=IFERROR(SUM(' + range(visitas) + ')/' + nVisitados + ',0)', ''],
+    ['', '', ''],
+    ['FECHAS', '', ''],
+    ['D\u00edas para la boda', '=DATE(2026,6,6)-TODAY()', ''],
+    ['D\u00edas para deadline RSVP (6 may)', '=DATE(2026,5,6)-TODAY()', '']
   ];
 
-  resSheet.getRange(1, 1, data.length, 2).setValues(data);
-  var boldRows = [1, 9, 14, 17, 28];
-  boldRows.forEach(function(r) { resSheet.getRange(r, 1, 1, 2).setFontWeight('bold'); });
-  resSheet.setColumnWidth(1, 280);
+  resSheet.getRange(1, 1, data.length, 3).setValues(data);
+
+  // Bold section headers
+  data.forEach(function(row, i) {
+    if (row[0] && (row[0] === row[0].toUpperCase() || row[0].indexOf('POR ETIQUETA') === 0 || row[0].indexOf('MEN') === 0) && row[1] === '' && row[2] === '') {
+      resSheet.getRange(i + 1, 1, 1, 3).setFontWeight('bold').setBackground('#f0ede5');
+    }
+  });
+
+  // Header row formatting
+  resSheet.getRange(1, 1, 1, 3).setFontWeight('bold').setBackground('#5c6b4f').setFontColor('#ffffff');
+
+  // Format percentage column
+  resSheet.getRange(1, 3, data.length, 1).setNumberFormat('0%');
+
+  // Column widths
+  resSheet.setColumnWidth(1, 320);
   resSheet.setColumnWidth(2, 100);
+  resSheet.setColumnWidth(3, 90);
+  resSheet.setFrozenRows(1);
 }
 
 function refreshMesaDropdownMenu() {
