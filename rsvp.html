@@ -332,6 +332,50 @@
       margin-top: 0.5rem;
     }
 
+    /* Countdown shown after a "Sí" confirmation */
+    .success-countdown {
+      display: none;
+      margin: 1.5rem 0 0.5rem;
+      animation: fadeUp 0.6s ease 0.3s both;
+    }
+    .success-countdown.visible { display: block; }
+    .success-countdown .cd-msg {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 0.95rem;
+      color: var(--taupe);
+      margin-bottom: 0.8rem;
+    }
+    .success-countdown .cd-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .success-countdown .cd-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 0.9rem;
+    }
+    .success-countdown .cd-item:not(:last-child) {
+      border-right: 1px solid var(--taupe-light);
+    }
+    .success-countdown .cd-num {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.5rem, 5vw, 2rem);
+      font-weight: 400;
+      color: var(--taupe);
+      line-height: 1;
+    }
+    .success-countdown .cd-unit {
+      font-family: 'Lato', sans-serif;
+      font-weight: 300;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      color: var(--taupe-light);
+      margin-top: 0.25rem;
+    }
+
     @keyframes popIn {
       from { transform: scale(0); opacity: 0; }
       to { transform: scale(1); opacity: 1; }
@@ -481,6 +525,18 @@
         <div class="check">&#10003;</div>
         <p>Gracias! Ya qued&oacute; guardado.</p>
         <p class="sub">Si algo cambia, puedes volver a este enlace y actualizar tu respuesta.</p>
+
+        <!-- Countdown shown only when at least one guest confirmed "Sí" -->
+        <div class="success-countdown" id="successCountdown">
+          <p class="cd-msg">&iexcl;Nos vemos en&hellip;</p>
+          <div class="cd-row">
+            <div class="cd-item"><span class="cd-num" id="cd-days">--</span><span class="cd-unit">d&iacute;as</span></div>
+            <div class="cd-item"><span class="cd-num" id="cd-hours">--</span><span class="cd-unit">hrs</span></div>
+            <div class="cd-item"><span class="cd-num" id="cd-mins">--</span><span class="cd-unit">min</span></div>
+            <div class="cd-item"><span class="cd-num" id="cd-secs">--</span><span class="cd-unit">seg</span></div>
+          </div>
+        </div>
+
         <a href="#" id="backToHome" class="back-link">Ver nuestra invitaci&oacute;n</a>
       </div>
     </div>
@@ -694,6 +750,12 @@
           document.querySelector('.family-hint').style.display = 'none';
           document.getElementById('alreadyResponded').style.display = 'none';
           document.getElementById('successMsg').classList.add('visible');
+          // Hide the duplicate footer link — the success message already has one
+          var footerLink = document.getElementById('backToHomeFooter');
+          if (footerLink && footerLink.parentElement) footerLink.parentElement.style.display = 'none';
+          // Show the countdown only if at least one guest in the family confirmed "Sí"
+          var anyYes = familyData.miembros.some(function(m) { return m.confirmado === true; });
+          if (anyYes) startCountdown();
         } else {
           throw new Error('Save failed');
         }
@@ -710,9 +772,35 @@
       document.getElementById('errorState').style.display = 'block';
     }
 
-    // Back to home links
+    // Countdown to the ceremony (June 6, 2026 at 3:30 PM Colombia time)
+    var countdownTimer = null;
+    function startCountdown() {
+      var el = document.getElementById('successCountdown');
+      el.classList.add('visible');
+      var target = new Date('2026-06-06T15:30:00-05:00').getTime();
+      function update() {
+        var diff = target - new Date().getTime();
+        if (diff <= 0) {
+          el.innerHTML = '<p class="cd-msg">¡El gran día llegó!</p>';
+          if (countdownTimer) clearInterval(countdownTimer);
+          return;
+        }
+        var days = Math.floor(diff / 86400000);
+        var hours = Math.floor((diff % 86400000) / 3600000);
+        var mins = Math.floor((diff % 3600000) / 60000);
+        var secs = Math.floor((diff % 60000) / 1000);
+        document.getElementById('cd-days').textContent = days;
+        document.getElementById('cd-hours').textContent = hours;
+        document.getElementById('cd-mins').textContent = mins;
+        document.getElementById('cd-secs').textContent = secs;
+      }
+      update();
+      countdownTimer = setInterval(update, 1000);
+    }
+
+    // Back to invitation links — point to the new invitation page, not the old save-the-date
     const codeParam = new URLSearchParams(window.location.search).get('code');
-    const homeUrl = codeParam ? 'index.html?code=' + encodeURIComponent(codeParam) : 'index.html';
+    const homeUrl = codeParam ? 'invitation/?code=' + encodeURIComponent(codeParam) : 'invitation/';
     document.querySelectorAll('#backToHome, #backToHomeFooter').forEach(function(el) {
       if (el) el.href = homeUrl;
     });
