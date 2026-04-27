@@ -521,8 +521,17 @@ function generateCodesRemote() {
   }
 }
 
+// Returns ',' for English-locale sheets and ';' for everything else.
+// Apps Script's setFormula/setValues with '=' interprets formulas using the
+// spreadsheet's locale, so we need to match it when building formula strings.
+function getFormulaSeparator() {
+  var loc = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetLocale() || '';
+  return loc.indexOf('en') === 0 ? ',' : ';';
+}
+
 function generateWhatsAppMessagesRemote() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sep = getFormulaSeparator();
   var sheet = ss.getSheetByName(SHEET_NAME);
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
@@ -581,14 +590,14 @@ function generateWhatsAppMessagesRemote() {
 
     var row = i + 2;
     if (waLink) {
-      msgSheet.getRange(row, 1).setFormula('=HYPERLINK("' + waLink.replace(/"/g, '""') + '", "' + group.replace(/"/g, '""') + '")');
+      msgSheet.getRange(row, 1).setFormula('=HYPERLINK("' + waLink.replace(/"/g, '""') + '"' + sep + ' "' + group.replace(/"/g, '""') + '")');
     } else {
       msgSheet.getRange(row, 1).setValue(group);
       msgSheet.getRange(row, 1).setFontColor('#cccccc');
     }
-    msgSheet.getRange(row, 2).setFormula('=HYPERLINK("' + url + '", "Ver invitaci\u00f3n")');
+    msgSheet.getRange(row, 2).setFormula('=HYPERLINK("' + url + '"' + sep + ' "Ver invitaci\u00f3n")');
     var stdUrl = saveTheDateUrl + info.code;
-    msgSheet.getRange(row, 3).setFormula('=HYPERLINK("' + stdUrl + '", "Ver save the date")');
+    msgSheet.getRange(row, 3).setFormula('=HYPERLINK("' + stdUrl + '"' + sep + ' "Ver save the date")');
   });
 
   msgSheet.setColumnWidth(1, 280);
@@ -598,6 +607,8 @@ function generateWhatsAppMessagesRemote() {
 
 function createResumenRemote() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sep = getFormulaSeparator();
+  var dec = sep === ',' ? '.' : ',';  // decimal separator is the opposite of arg sep
   var sheet = ss.getSheetByName(SHEET_NAME);
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
 
@@ -621,24 +632,21 @@ function createResumenRemote() {
   // Helper to build range strings (e.g. "Invitados!H2:H")
   var range = function(letter) { return 'Invitados!' + letter + '2:' + letter; };
   var total = 'COUNTA(' + range(nombre) + ')';
-  var nSi = 'COUNTIF(' + range(conf) + ',"si")';
-  var nNo = 'COUNTIF(' + range(conf) + ',"no")';
-  var nTalVez = 'COUNTIF(' + range(conf) + ',"tal_vez")';
+  var nSi = 'COUNTIF(' + range(conf) + sep + '"si")';
+  var nNo = 'COUNTIF(' + range(conf) + sep + '"no")';
+  var nTalVez = 'COUNTIF(' + range(conf) + sep + '"tal_vez")';
   var nResp = '(' + nSi + '+' + nNo + '+' + nTalVez + ')';
   var nPend = '(' + total + '-' + nResp + ')';
-  var nNinos = 'COUNTIF(' + range(nino) + ',"Si")';
-  var nNinosSi = 'COUNTIFS(' + range(nino) + ',"Si",' + range(conf) + ',"si")';
-  var nVisitados = 'COUNTIF(' + range(visitas) + ',">0")';
-
-  var tagRow = function(label, pattern, base) {
-    var formula = 'COUNTIF(' + range(etiqueta) + ',"*' + pattern + '*")';
-    return [label, '=' + formula, '=IFERROR(' + formula + '/' + base + ',0)'];
-  };
+  var nNinos = 'COUNTIF(' + range(nino) + sep + '"Si")';
+  var nNinosSi = 'COUNTIFS(' + range(nino) + sep + '"Si"' + sep + range(conf) + sep + '"si")';
+  var nVisitados = 'COUNTIF(' + range(visitas) + sep + '">0")';
+  var menuCount = function(val) { return 'COUNTIF(' + range(menu) + sep + '"' + val + '")'; };
 
   var tagConfirmedRow = function(label, pattern) {
-    var match = 'COUNTIFS(' + range(etiqueta) + ',"*' + pattern + '*",' + range(conf) + ',"si")';
-    var totalTag = 'COUNTIF(' + range(etiqueta) + ',"*' + pattern + '*")';
-    return [label, '=' + match, '=IFERROR(' + match + '/' + totalTag + ',0)'];
+    var match = 'COUNTIFS(' + range(etiqueta) + sep + '"*' + pattern + '*"' + sep + range(conf) + sep + '"si")';
+    var totalTag = 'COUNTIF(' + range(etiqueta) + sep + '"*' + pattern + '*")';
+    // Col B = total invitados con esa etiqueta; Col C = % confirmación (confirmados / total)
+    return [label, '=' + totalTag, '=IFERROR(' + match + '/' + totalTag + sep + '0)'];
   };
 
   var data = [
@@ -656,20 +664,20 @@ function createResumenRemote() {
     ['', '', ''],
     ['ASISTENCIA ESPERADA', '', ''],
     ['M\u00ednima (solo confirmados)', '=' + nSi, '=' + nSi + '/' + total],
-    ['Probable (confirmados + 50% tal vez)', '=' + nSi + '+ROUND(' + nTalVez + '*0.5)', '=(' + nSi + '+ROUND(' + nTalVez + '*0.5))/' + total],
+    ['Probable (confirmados + 50% tal vez)', '=' + nSi + '+ROUND(' + nTalVez + '*0' + dec + '5)', '=(' + nSi + '+ROUND(' + nTalVez + '*0' + dec + '5))/' + total],
     ['M\u00e1xima (confirmados + tal vez)', '=' + nSi + '+' + nTalVez, '=(' + nSi + '+' + nTalVez + ')/' + total],
     ['', '', ''],
     ['MEN\u00daS (de confirmados)', '', ''],
-    ['Normal', '=COUNTIF(' + range(menu) + ',"normal")', '=IFERROR(COUNTIF(' + range(menu) + ',"normal")/' + nSi + ',0)'],
-    ['Vegetariano', '=COUNTIF(' + range(menu) + ',"vegetariano")', '=IFERROR(COUNTIF(' + range(menu) + ',"vegetariano")/' + nSi + ',0)'],
-    ['Infantil', '=COUNTIF(' + range(menu) + ',"infantil")', '=IFERROR(COUNTIF(' + range(menu) + ',"infantil")/' + nSi + ',0)'],
-    ['Sin definir', '=' + nSi + '-COUNTIF(' + range(menu) + ',"normal")-COUNTIF(' + range(menu) + ',"vegetariano")-COUNTIF(' + range(menu) + ',"infantil")', '=IFERROR((' + nSi + '-COUNTIF(' + range(menu) + ',"normal")-COUNTIF(' + range(menu) + ',"vegetariano")-COUNTIF(' + range(menu) + ',"infantil"))/' + nSi + ',0)'],
+    ['Normal', '=' + menuCount('normal'), '=IFERROR(' + menuCount('normal') + '/' + nSi + sep + '0)'],
+    ['Vegetariano', '=' + menuCount('vegetariano'), '=IFERROR(' + menuCount('vegetariano') + '/' + nSi + sep + '0)'],
+    ['Infantil', '=' + menuCount('infantil'), '=IFERROR(' + menuCount('infantil') + '/' + nSi + sep + '0)'],
+    ['Sin definir', '=' + nSi + '-' + menuCount('normal') + '-' + menuCount('vegetariano') + '-' + menuCount('infantil'), '=IFERROR((' + nSi + '-' + menuCount('normal') + '-' + menuCount('vegetariano') + '-' + menuCount('infantil') + ')/' + nSi + sep + '0)'],
     ['', '', ''],
     ['DEMOGRAF\u00cdA', '', ''],
     ['Ni\u00f1os invitados', '=' + nNinos, '=' + nNinos + '/' + total],
     ['Adultos invitados', '=' + total + '-' + nNinos, '=(' + total + '-' + nNinos + ')/' + total],
-    ['Ni\u00f1os confirmados', '=' + nNinosSi, '=IFERROR(' + nNinosSi + '/' + nNinos + ',0)'],
-    ['Adultos confirmados', '=' + nSi + '-' + nNinosSi, '=IFERROR((' + nSi + '-' + nNinosSi + ')/(' + total + '-' + nNinos + '),0)'],
+    ['Ni\u00f1os confirmados', '=' + nNinosSi, '=IFERROR(' + nNinosSi + '/' + nNinos + sep + '0)'],
+    ['Adultos confirmados', '=' + nSi + '-' + nNinosSi, '=IFERROR((' + nSi + '-' + nNinosSi + ')/(' + total + '-' + nNinos + ')' + sep + '0)'],
     ['', '', ''],
     ['POR ETIQUETA (total / % confirmaci\u00f3n)', '', ''],
     tagConfirmedRow('Brice\u00f1os', 'Brice\u00f1os'),
@@ -684,13 +692,13 @@ function createResumenRemote() {
     ['', '', ''],
     ['ENGAGEMENT', '', ''],
     ['Han abierto el enlace', '=' + nVisitados, '=' + nVisitados + '/' + total],
-    ['Abrieron pero no respondieron', '=COUNTIFS(' + range(visitas) + ',">0",' + range(conf) + ',"")', '=IFERROR(COUNTIFS(' + range(visitas) + ',">0",' + range(conf) + ',"")/' + nVisitados + ',0)'],
+    ['Abrieron pero no respondieron', '=COUNTIFS(' + range(visitas) + sep + '">0"' + sep + range(conf) + sep + '"")', '=IFERROR(COUNTIFS(' + range(visitas) + sep + '">0"' + sep + range(conf) + sep + '"")/' + nVisitados + sep + '0)'],
     ['Total visitas', '=SUM(' + range(visitas) + ')', ''],
-    ['Promedio visitas / invitado que abri\u00f3', '=IFERROR(SUM(' + range(visitas) + ')/' + nVisitados + ',0)', ''],
+    ['Promedio visitas / invitado que abri\u00f3', '=IFERROR(SUM(' + range(visitas) + ')/' + nVisitados + sep + '0)', ''],
     ['', '', ''],
     ['FECHAS', '', ''],
-    ['D\u00edas para la boda', '=DATE(2026,6,6)-TODAY()', ''],
-    ['D\u00edas para deadline RSVP (6 may)', '=DATE(2026,5,6)-TODAY()', '']
+    ['D\u00edas para la boda', '=DATE(2026' + sep + '6' + sep + '6)-TODAY()', ''],
+    ['D\u00edas para deadline RSVP (6 may)', '=DATE(2026' + sep + '5' + sep + '6)-TODAY()', '']
   ];
 
   resSheet.getRange(1, 1, data.length, 3).setValues(data);
