@@ -11,8 +11,9 @@
 // 5. Copy the deployment URL and paste it in rsvp.html
 //
 // Columnas del tab "Invitados":
-// Nombre | Apellido | Etiqueta | Telefono | Grupo | codigo | es_nino | confirmado | menu | notas | actualizado | visitas | ultima_visita
-// (ultima_visita es opcional; si la columna existe, doGet la actualiza al timestamp de cada visita)
+// Nombre | Apellido | Etiqueta | Telefono | Grupo | codigo | es_nino | confirmado | menu | notas | actualizado | visitas | ultima_visita | noches
+// - ultima_visita es opcional; si la columna existe, doGet la actualiza al timestamp de cada visita
+// - noches es opcional, edición manual por los novios (0, 1 o 2). Si la columna existe, el Resumen lo cuenta.
 
 var SHEET_NAME = 'Invitados';
 
@@ -47,6 +48,10 @@ function doGet(e) {
   }
   if (action === 'generar_mapa') {
     try { generateMapaMesasRemote(); return respondGet({ success: true }, callback); }
+    catch (err) { return respondGet({ error: err.message }, callback); }
+  }
+  if (action === 'imprimir_listado') {
+    try { generatePrintableListRemote(); return respondGet({ success: true }, callback); }
     catch (err) { return respondGet({ error: err.message }, callback); }
   }
 
@@ -98,6 +103,7 @@ function doGet(e) {
       members.push({
         row: i + 1,
         nombre: (row[col['Nombre']] + ' ' + row[col['Apellido']]).trim(),
+        primer_nombre: String(row[col['Nombre']] || '').trim(),
         es_nino: esNino,
         confirmado: confirmado,
         menu: row[col['menu']] || '',
@@ -624,10 +630,44 @@ function createResumenRemote() {
   var nombre = colLetter['Nombre'];
   var etiqueta = colLetter['Etiqueta'];
   var visitas = colLetter['visitas'];
+  var noches = colLetter['noches']; // optional column
 
+  // Preserve editable config values (B4 couple, B5 cupo, B6 precio) across re-runs
+  var existingCouple = true;
+  var existingCapacity = 80;
+  var existingPrice = 0;
   var resSheet = ss.getSheetByName('Resumen');
-  if (!resSheet) resSheet = ss.insertSheet('Resumen');
-  else { resSheet.clearContents(); resSheet.clearFormats(); }
+  if (resSheet) {
+    try {
+      var b4 = resSheet.getRange('B4').getValue();
+      var b5 = resSheet.getRange('B5').getValue();
+      var b6 = resSheet.getRange('B6').getValue();
+      if (typeof b4 === 'boolean') existingCouple = b4;
+      if (typeof b5 === 'number' && b5 > 0) existingCapacity = b5;
+      if (typeof b6 === 'number' && b6 >= 0) existingPrice = b6;
+    } catch (e) {}
+    resSheet.clearContents();
+    resSheet.clearFormats();
+  } else {
+    resSheet = ss.insertSheet('Resumen');
+  }
+
+  // Discover unique tags from the Etiqueta column (split on , and ;)
+  var uniqueTags = [];
+  var etiquetaIdx = headers.indexOf('Etiqueta');
+  if (etiquetaIdx >= 0 && sheet.getLastRow() >= 2) {
+    var tagValues = sheet.getRange(2, etiquetaIdx + 1, sheet.getLastRow() - 1, 1).getValues();
+    var tagSet = {};
+    tagValues.forEach(function(row) {
+      var cell = String(row[0]).trim();
+      if (!cell) return;
+      cell.split(/[,;]/).forEach(function(t) {
+        var tag = t.trim();
+        if (tag) tagSet[tag] = true;
+      });
+    });
+    uniqueTags = Object.keys(tagSet).sort();
+  }
 
   // Helper to build range strings (e.g. "Invitados!H2:H")
   var range = function(letter) { return 'Invitados!' + letter + '2:' + letter; };
@@ -640,18 +680,34 @@ function createResumenRemote() {
   var nNinos = 'COUNTIF(' + range(nino) + sep + '"Si")';
   var nNinosSi = 'COUNTIFS(' + range(nino) + sep + '"Si"' + sep + range(conf) + sep + '"si")';
   var nVisitados = 'COUNTIF(' + range(visitas) + sep + '">0")';
-  var menuCount = function(val) { return 'COUNTIF(' + range(menu) + sep + '"' + val + '")'; };
+  // Only count menus among "si"-confirmed guests (tal_vez also set menu in the form,
+  // which would otherwise make the totals exceed nSi and produce a negative "Sin definir").
+  var menuCount = function(val) { return 'COUNTIFS(' + range(menu) + sep + '"' + val + '"' + sep + range(conf) + sep + '"si")'; };
+
+  // Theoretical attendees: total - "no" + 2 if couple counts toward the cupo (B4)
+  var teoricos = '(' + total + '-' + nNo + '+IF($B$4' + sep + '2' + sep + '0))';
+  // Extras over capacity (B5), and total cost using price per extra (B6)
+  var extras = 'MAX(0' + sep + teoricos + '-$B$5)';
+  var totalCost = '(' + extras + '*$B$6)';
 
   var tagConfirmedRow = function(label, pattern) {
-    var match = 'COUNTIFS(' + range(etiqueta) + sep + '"*' + pattern + '*"' + sep + range(conf) + sep + '"si")';
-    var totalTag = 'COUNTIF(' + range(etiqueta) + sep + '"*' + pattern + '*")';
+    var safe = pattern.replace(/"/g, '""');
+    var match = 'COUNTIFS(' + range(etiqueta) + sep + '"*' + safe + '*"' + sep + range(conf) + sep + '"si")';
+    var totalTag = 'COUNTIF(' + range(etiqueta) + sep + '"*' + safe + '*")';
     // Col B = total invitados con esa etiqueta; Col C = % confirmación (confirmados / total)
     return [label, '=' + totalTag, '=IFERROR(' + match + '/' + totalTag + sep + '0)'];
   };
 
+  // Build the data array section by section so we can grow it conditionally
   var data = [
     ['RESUMEN', 'Cantidad', '%'],
     ['', '', ''],
+    ['CONFIGURACI\u00d3N (editable)', '', ''],
+    ['Eyla y Mauricio cuentan dentro del cupo', existingCouple, ''],
+    ['Cupo del contrato (personas)', existingCapacity, ''],
+    ['Precio por persona extra', existingPrice, ''],
+    ['', '', ''],
+    ['INVITADOS', '', ''],
     ['Total invitados', '=' + total, ''],
     ['Confirmados (s\u00ed)', '=' + nSi, '=' + nSi + '/' + total],
     ['No asisten', '=' + nNo, '=' + nNo + '/' + total],
@@ -667,6 +723,11 @@ function createResumenRemote() {
     ['Probable (confirmados + 50% tal vez)', '=' + nSi + '+ROUND(' + nTalVez + '*0' + dec + '5)', '=(' + nSi + '+ROUND(' + nTalVez + '*0' + dec + '5))/' + total],
     ['M\u00e1xima (confirmados + tal vez)', '=' + nSi + '+' + nTalVez, '=(' + nSi + '+' + nTalVez + ')/' + total],
     ['', '', ''],
+    ['EXTRAS A PAGAR', '', ''],
+    ['Asistencia te\u00f3rica (excluye NO; suma 2 si aplica)', '=' + teoricos, '=' + teoricos + '/' + total],
+    ['Personas sobre el cupo', '=' + extras, ''],
+    ['Total a pagar por extras', '=' + totalCost, ''],
+    ['', '', ''],
     ['MEN\u00daS (de confirmados)', '', ''],
     ['Normal', '=' + menuCount('normal'), '=IFERROR(' + menuCount('normal') + '/' + nSi + sep + '0)'],
     ['Vegetariano', '=' + menuCount('vegetariano'), '=IFERROR(' + menuCount('vegetariano') + '/' + nSi + sep + '0)'],
@@ -677,35 +738,69 @@ function createResumenRemote() {
     ['Ni\u00f1os invitados', '=' + nNinos, '=' + nNinos + '/' + total],
     ['Adultos invitados', '=' + total + '-' + nNinos, '=(' + total + '-' + nNinos + ')/' + total],
     ['Ni\u00f1os confirmados', '=' + nNinosSi, '=IFERROR(' + nNinosSi + '/' + nNinos + sep + '0)'],
-    ['Adultos confirmados', '=' + nSi + '-' + nNinosSi, '=IFERROR((' + nSi + '-' + nNinosSi + ')/(' + total + '-' + nNinos + ')' + sep + '0)'],
-    ['', '', ''],
-    ['POR ETIQUETA (total / % confirmaci\u00f3n)', '', ''],
-    tagConfirmedRow('Brice\u00f1os', 'Brice\u00f1os'),
-    tagConfirmedRow('Amigos Eyla', 'Amigos Eyla'),
-    tagConfirmedRow('Amigos Mauricio', 'Amigos Mauricio'),
-    tagConfirmedRow('Pekin', 'Pekin'),
-    tagConfirmedRow('Astros', 'Astros'),
-    tagConfirmedRow('Aizagas', 'Aizagas'),
-    tagConfirmedRow('iKono', 'iKono'),
-    tagConfirmedRow('UTP', 'UTP'),
-    tagConfirmedRow('Pasto', 'Pasto'),
-    ['', '', ''],
-    ['ENGAGEMENT', '', ''],
-    ['Han abierto el enlace', '=' + nVisitados, '=' + nVisitados + '/' + total],
-    ['Abrieron pero no respondieron', '=COUNTIFS(' + range(visitas) + sep + '">0"' + sep + range(conf) + sep + '"")', '=IFERROR(COUNTIFS(' + range(visitas) + sep + '">0"' + sep + range(conf) + sep + '"")/' + nVisitados + sep + '0)'],
-    ['Total visitas', '=SUM(' + range(visitas) + ')', ''],
-    ['Promedio visitas / invitado que abri\u00f3', '=IFERROR(SUM(' + range(visitas) + ')/' + nVisitados + sep + '0)', ''],
-    ['', '', ''],
-    ['FECHAS', '', ''],
-    ['D\u00edas para la boda', '=DATE(2026' + sep + '6' + sep + '6)-TODAY()', ''],
-    ['D\u00edas para deadline RSVP (6 may)', '=DATE(2026' + sep + '5' + sep + '6)-TODAY()', '']
+    ['Adultos confirmados', '=' + nSi + '-' + nNinosSi, '=IFERROR((' + nSi + '-' + nNinosSi + ')/(' + total + '-' + nNinos + ')' + sep + '0)']
   ];
+
+  // NOCHES section (only if the column exists)
+  if (noches) {
+    var n1 = 'COUNTIF(' + range(noches) + sep + '1)';
+    var n2 = 'COUNTIF(' + range(noches) + sep + '2)';
+    data.push(['', '', '']);
+    data.push(['NOCHES (alojamiento)', '', '']);
+    data.push(['Se quedan 1 noche', '=' + n1, '']);
+    data.push(['Se quedan 2 noches', '=' + n2, '']);
+    data.push(['Total alojados', '=' + n1 + '+' + n2, '']);
+  }
+
+  // POR ETIQUETA \u2014 dynamically discovered from the data
+  data.push(['', '', '']);
+  data.push(['POR ETIQUETA (total / % confirmaci\u00f3n)', '', '']);
+  if (uniqueTags.length === 0) {
+    data.push(['(ninguna etiqueta encontrada)', '', '']);
+  } else {
+    uniqueTags.forEach(function(tag) {
+      data.push(tagConfirmedRow(tag, tag));
+    });
+  }
+
+  // ENGAGEMENT
+  data.push(['', '', '']);
+  data.push(['ENGAGEMENT', '', '']);
+  data.push(['Han abierto el enlace', '=' + nVisitados, '=' + nVisitados + '/' + total]);
+  data.push(['Abrieron pero no respondieron', '=COUNTIFS(' + range(visitas) + sep + '">0"' + sep + range(conf) + sep + '"")', '=IFERROR(COUNTIFS(' + range(visitas) + sep + '">0"' + sep + range(conf) + sep + '"")/' + nVisitados + sep + '0)']);
+  data.push(['Total visitas', '=SUM(' + range(visitas) + ')', '']);
+  data.push(['Promedio visitas / invitado que abri\u00f3', '=IFERROR(SUM(' + range(visitas) + ')/' + nVisitados + sep + '0)', '']);
+
+  // FECHAS
+  data.push(['', '', '']);
+  data.push(['FECHAS', '', '']);
+  data.push(['D\u00edas para la boda', '=DATE(2026' + sep + '6' + sep + '6)-TODAY()', '']);
+  data.push(['D\u00edas para deadline RSVP (6 may)', '=DATE(2026' + sep + '5' + sep + '6)-TODAY()', '']);
 
   resSheet.getRange(1, 1, data.length, 3).setValues(data);
 
-  // Bold section headers
+  // Editable config \u2014 checkbox on B4, currency on B6, highlight whole config block
+  resSheet.getRange('B4').insertCheckboxes();
+  resSheet.getRange('B6').setNumberFormat('"$"#,##0');
+  resSheet.getRange('B4:B6').setBackground('#fff8e7').setFontWeight('bold');
+
+  // Currency format on the "Total a pagar por extras" row
   data.forEach(function(row, i) {
-    if (row[0] && (row[0] === row[0].toUpperCase() || row[0].indexOf('POR ETIQUETA') === 0 || row[0].indexOf('MEN') === 0) && row[1] === '' && row[2] === '') {
+    if (row[0] === 'Total a pagar por extras') {
+      resSheet.getRange(i + 1, 2).setNumberFormat('"$"#,##0');
+    }
+  });
+
+  // Bold section headers (uppercase labels with empty B/C, plus a few mixed-case ones)
+  data.forEach(function(row, i) {
+    var label = row[0];
+    if (!label) return;
+    if (row[1] !== '' || row[2] !== '') return;
+    var isHeader = label === label.toUpperCase()
+      || label.indexOf('POR ETIQUETA') === 0
+      || label.indexOf('MEN') === 0
+      || label.indexOf('CONFIG') === 0;
+    if (isHeader) {
       resSheet.getRange(i + 1, 1, 1, 3).setFontWeight('bold').setBackground('#f0ede5');
     }
   });
@@ -717,8 +812,8 @@ function createResumenRemote() {
   resSheet.getRange(1, 3, data.length, 1).setNumberFormat('0%');
 
   // Column widths
-  resSheet.setColumnWidth(1, 320);
-  resSheet.setColumnWidth(2, 100);
+  resSheet.setColumnWidth(1, 340);
+  resSheet.setColumnWidth(2, 110);
   resSheet.setColumnWidth(3, 90);
   resSheet.setFrozenRows(1);
 }
@@ -893,6 +988,86 @@ function generateMapaMesasRemote() {
   mapaSheet.setColumnWidth(5, 90);
 }
 
+// ====== Printable list ======
+// Builds an "Imprimir" sheet with three sections (Confirmados / Tal vez / Sin responder).
+// Names are arranged in 3 columns, column-major so the eye reads top-to-bottom per column.
+function generatePrintableListRemote() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var col = {};
+  headers.forEach(function(h, i) { col[h] = i; });
+
+  var byStatus = { si: [], tal_vez: [], pendiente: [] };
+  for (var i = 1; i < data.length; i++) {
+    var nombre = String(data[i][col['Nombre']] || '').trim();
+    if (!nombre) continue;
+    var apellido = String(data[i][col['Apellido']] || '').trim();
+    var fullName = (nombre + ' ' + apellido).trim();
+    var status = String(data[i][col['confirmado']] || '').trim().toLowerCase();
+    if (status === 'si') byStatus.si.push(fullName);
+    else if (status === 'tal_vez') byStatus.tal_vez.push(fullName);
+    else if (status === 'no') {} // skip — not coming
+    else byStatus.pendiente.push(fullName);
+  }
+  Object.keys(byStatus).forEach(function(k) { byStatus[k].sort(); });
+
+  var pSheet = ss.getSheetByName('Imprimir');
+  if (pSheet) { pSheet.clearContents(); pSheet.clearFormats(); }
+  else pSheet = ss.insertSheet('Imprimir');
+
+  var COLS = 3;
+  var currentRow = 1;
+
+  function writeSection(title, names, opts) {
+    opts = opts || {};
+    var n = names.length;
+
+    // Section title (merged across the 3 columns)
+    var titleRange = pSheet.getRange(currentRow, 1, 1, COLS);
+    pSheet.getRange(currentRow, 1).setValue(title + ' — ' + n + (n === 1 ? ' persona' : ' personas'));
+    titleRange.merge()
+      .setFontWeight('bold')
+      .setBackground('#5c6b4f')
+      .setFontColor('#ffffff')
+      .setFontSize(13)
+      .setHorizontalAlignment('center');
+    currentRow += 2; // title + blank divider
+
+    if (n > 0) {
+      var rowsPerCol = Math.ceil(n / COLS);
+      var grid = [];
+      for (var r = 0; r < rowsPerCol; r++) grid.push(['', '', '']);
+      names.forEach(function(name, idx) {
+        var row = idx % rowsPerCol;
+        var c = Math.floor(idx / rowsPerCol);
+        grid[row][c] = name;
+      });
+      var nameRange = pSheet.getRange(currentRow, 1, rowsPerCol, COLS);
+      nameRange.setValues(grid);
+      if (opts.bold) nameRange.setFontWeight('bold');
+      if (opts.color) nameRange.setFontColor(opts.color);
+      currentRow += rowsPerCol;
+    }
+
+    currentRow += 2; // section break
+  }
+
+  writeSection('CONFIRMADOS', byStatus.si);
+  writeSection('TAL VEZ', byStatus.tal_vez, { bold: true, color: '#d97706' });   // amber-orange
+  writeSection('SIN RESPONDER', byStatus.pendiente, { bold: true, color: '#6b7280' }); // medium gray
+
+  pSheet.setColumnWidth(1, 220);
+  pSheet.setColumnWidth(2, 220);
+  pSheet.setColumnWidth(3, 220);
+}
+
+function generatePrintableList() {
+  generatePrintableListRemote();
+  SpreadsheetApp.getUi().alert('Listado para imprimir generado en la pestaña "Imprimir".');
+}
+
 // Menu
 function onOpen() {
   SpreadsheetApp.getUi()
@@ -900,6 +1075,7 @@ function onOpen() {
     .addItem('Generar codigos', 'generateCodes')
     .addItem('Generar mensajes WhatsApp', 'generateWhatsAppMessages')
     .addItem('Crear Resumen', 'createResumen')
+    .addItem('Generar listado para imprimir', 'generatePrintableList')
     .addSeparator()
     .addItem('Configurar mesas (resetea todo)', 'setupMesas')
     .addItem('Actualizar dropdown de mesas', 'refreshMesaDropdownMenu')
