@@ -128,8 +128,37 @@
       font-family: 'Great Vibes', cursive;
       font-size: 1.6rem;
       color: var(--olive);
-      margin-bottom: 0.3rem;
+      margin-bottom: 0.2rem;
       min-height: 2.2rem;
+    }
+
+    .inv-cupos {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 0.9rem;
+      color: var(--taupe-light);
+      margin-bottom: 0.4rem;
+    }
+
+    .inv-members {
+      list-style: none;
+      padding: 0;
+      margin: 0 auto 1.1rem;
+      max-width: 320px;
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      color: var(--taupe);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .inv-members li { display: inline; }
+
+    .inv-members li:not(:last-child)::after {
+      content: '·';
+      color: var(--olive-light);
+      margin: 0 0.5em;
+      font-weight: 600;
     }
 
     .envelope-hint {
@@ -366,6 +395,8 @@
           <img src="preboda/r6vm0356.jpg" alt="Eyla y Mauricio">
         </div>
         <p class="inv-family-name" id="envelopeName"></p>
+        <p class="inv-cupos" id="invCupos"></p>
+        <ul class="inv-members" id="invMembers"></ul>
         <p class="inv-invite-text">Te invitamos a celebrar el sacramento de nuestro matrimonio</p>
         <h1 class="inv-names">Eyla <span class="amp">&</span> Mauricio</h1>
         <p class="inv-date">6 &middot; junio &middot; 2026</p>
@@ -681,6 +712,25 @@
       appsScriptGet({ code: code }).then(function(data) {
         if (data && data.familia) {
           document.getElementById('envelopeName').textContent = data.familia;
+        }
+        if (data && Array.isArray(data.miembros) && data.miembros.length > 0) {
+          var n = data.miembros.length;
+          var cupos = document.getElementById('invCupos');
+          cupos.textContent = n === 1
+            ? 'Hemos reservado 1 lugar para ti'
+            : 'Hemos reservado ' + n + ' lugares para tu familia';
+          var list = document.getElementById('invMembers');
+          list.innerHTML = '';
+          // Only show the names list when there's more than one — for a single guest
+          // the group name already IS that person, so listing it again is redundant.
+          if (n >= 2) {
+            data.miembros.forEach(function(m) {
+              var li = document.createElement('li');
+              // primer_nombre is the new backend field; fall back to first word of nombre.
+              li.textContent = m.primer_nombre || (m.nombre || '').split(' ')[0];
+              list.appendChild(li);
+            });
+          }
         }
       }).catch(function() {});
     } else {
