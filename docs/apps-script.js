@@ -1001,9 +1001,11 @@ function generatePrintableListRemote() {
   var col = {};
   headers.forEach(function(h, i) { col[h] = i; });
 
-  // Soft, print-friendly palette. Black text stays legible on each.
-  var PALETTE = ['#fde2e4', '#e2f0cb', '#c7ceea', '#ffdac1', '#fff3b0', '#e0bbE4', '#b5ead7'];
+  // Saturated palette with white text for high contrast.
+  var PALETTE = ['#c0392b', '#2980b9', '#27ae60', '#8e44ad', '#d35400', '#16a085', '#2c3e50'];
   var NO_TAG_COLOR = '#ffffff';
+  var FONT_ON_TAG = '#ffffff';
+  var FONT_NO_TAG = '#000000';
 
   function firstTag(raw) {
     var s = String(raw || '').trim();
@@ -1024,7 +1026,11 @@ function generatePrintableListRemote() {
   }
   var uniqueTags = Object.keys(tagSet).sort();
   var tagColor = {};
-  uniqueTags.forEach(function(tag, idx) { tagColor[tag] = PALETTE[idx % PALETTE.length]; });
+  var tagOrder = {}; // for stable etiqueta-grouped sorting
+  uniqueTags.forEach(function(tag, idx) {
+    tagColor[tag] = PALETTE[idx % PALETTE.length];
+    tagOrder[tag] = idx;
+  });
 
   var byStatus = { si: [], tal_vez: [], pendiente: [] };
   for (var i = 1; i < data.length; i++) {
@@ -1034,14 +1040,24 @@ function generatePrintableListRemote() {
     var fullName = (nombre + ' ' + apellido).trim();
     var status = String(data[i][col['confirmado']] || '').trim().toLowerCase();
     var tag = firstTag(data[i][col['Etiqueta']]);
-    var entry = { name: fullName, color: tag ? tagColor[tag] : NO_TAG_COLOR };
+    var entry = {
+      name: fullName,
+      tag: tag,
+      color: tag ? tagColor[tag] : NO_TAG_COLOR,
+      fontColor: tag ? FONT_ON_TAG : FONT_NO_TAG,
+      order: tag ? tagOrder[tag] : Number.MAX_SAFE_INTEGER // untagged sink to the bottom
+    };
     if (status === 'si') byStatus.si.push(entry);
     else if (status === 'tal_vez') byStatus.tal_vez.push(entry);
     else if (status === 'no') {} // skip — not coming
     else byStatus.pendiente.push(entry);
   }
+  // Group by etiqueta (palette order), then by name within each etiqueta — colors stay clustered.
   Object.keys(byStatus).forEach(function(k) {
-    byStatus[k].sort(function(a, b) { return a.name.localeCompare(b.name); });
+    byStatus[k].sort(function(a, b) {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.name.localeCompare(b.name);
+    });
   });
 
   var pSheet = ss.getSheetByName('Imprimir');
@@ -1063,14 +1079,17 @@ function generatePrintableListRemote() {
       .setHorizontalAlignment('center');
     currentRow += 1;
     uniqueTags.forEach(function(tag) {
-      pSheet.getRange(currentRow, 1).setValue(tag).setBackground(tagColor[tag]).setFontWeight('bold');
+      pSheet.getRange(currentRow, 1)
+        .setValue(tag)
+        .setBackground(tagColor[tag])
+        .setFontColor(FONT_ON_TAG)
+        .setFontWeight('bold');
       currentRow += 1;
     });
     currentRow += 1; // divider
   }
 
-  function writeSection(title, entries, opts) {
-    opts = opts || {};
+  function writeSection(title, entries) {
     var n = entries.length;
 
     // Section title (merged across the 3 columns)
@@ -1088,21 +1107,24 @@ function generatePrintableListRemote() {
       var rowsPerCol = Math.ceil(n / COLS);
       var grid = [];
       var bgGrid = [];
+      var fgGrid = [];
       for (var r = 0; r < rowsPerCol; r++) {
         grid.push(['', '', '']);
         bgGrid.push([NO_TAG_COLOR, NO_TAG_COLOR, NO_TAG_COLOR]);
+        fgGrid.push([FONT_NO_TAG, FONT_NO_TAG, FONT_NO_TAG]);
       }
       entries.forEach(function(entry, idx) {
         var row = idx % rowsPerCol;
         var c = Math.floor(idx / rowsPerCol);
         grid[row][c] = entry.name;
         bgGrid[row][c] = entry.color;
+        fgGrid[row][c] = entry.fontColor;
       });
       var nameRange = pSheet.getRange(currentRow, 1, rowsPerCol, COLS);
       nameRange.setValues(grid);
       nameRange.setBackgrounds(bgGrid);
-      if (opts.bold) nameRange.setFontWeight('bold');
-      if (opts.color) nameRange.setFontColor(opts.color);
+      nameRange.setFontColors(fgGrid);
+      nameRange.setFontWeight('bold');
       currentRow += rowsPerCol;
     }
 
@@ -1110,8 +1132,8 @@ function generatePrintableListRemote() {
   }
 
   writeSection('CONFIRMADOS', byStatus.si);
-  writeSection('TAL VEZ', byStatus.tal_vez, { bold: true, color: '#d97706' });   // amber-orange
-  writeSection('SIN RESPONDER', byStatus.pendiente, { bold: true, color: '#6b7280' }); // medium gray
+  writeSection('TAL VEZ', byStatus.tal_vez);
+  writeSection('SIN RESPONDER', byStatus.pendiente);
 
   pSheet.setColumnWidth(1, 220);
   pSheet.setColumnWidth(2, 220);
