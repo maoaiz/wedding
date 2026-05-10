@@ -25,9 +25,9 @@ Three entry pages, all standalone (each inlines its own CSS/JS, shares only `eff
 
 ### Frontend ↔ Apps Script (JSONP, not fetch)
 
-All three dynamic pages talk to the same Apps Script Web App URL (`API_URL` constant, duplicated in `rsvp.html`, `invitation/index.html`, `admin.html`). They use **JSONP via injected `<script>` tags**, not `fetch` — this is deliberate: Apps Script `/exec` issues cross-origin redirects that `fetch` can't follow without CORS headers Google doesn't send. If you "modernize" this to `fetch`, it will break. The server-side counterpart is `respondGet()` in `docs/apps-script.js`, which wraps JSON in the `?callback=` name when present.
+All three dynamic pages talk to the same Apps Script Web App URL, duplicated as `API_URL` in `rsvp.html` and `invitation/index.html`, and as `API` in `admin.html`. They use **JSONP via injected `<script>` tags**, not `fetch` — this is deliberate: Apps Script `/exec` issues cross-origin redirects that `fetch` can't follow without CORS headers Google doesn't send. If you "modernize" this to `fetch`, it will break. The server-side counterpart is `respondGet()` in `docs/apps-script.js`, which wraps JSON in the `?callback=` name when present.
 
-Actions are dispatched by `?action=...` query param: `get` (default — look up family by code), `save`, `generar_codigos`, `generar_mensajes`, `generar_mapa`, `setup_mesas`, `refresh_dropdown`, `crear_resumen`.
+Actions are dispatched by `?action=...` query param: `get` (default — look up family by code), `save`, `generar_codigos`, `generar_mensajes`, `generar_mapa`, `setup_mesas`, `refresh_dropdown`, `crear_resumen`, `imprimir_listado`.
 
 ### Apps Script backend (`docs/apps-script.js`)
 
@@ -51,6 +51,6 @@ Guests are grouped by the `Grupo` column — `generateCodes` assigns one shared 
 ## Conventions worth preserving
 
 - Don't introduce a build step, bundler, or framework — the site is intentionally zero-dependency static HTML.
-- Keep `API_URL` in sync across `rsvp.html`, `invitation/index.html`, and `admin.html` when the Apps Script deployment is bumped.
+- Keep the Apps Script `/exec` URL in sync across `rsvp.html` (`API_URL`), `invitation/index.html` (`API_URL`), and `admin.html` (`API`) when the deployment is bumped.
 - Keep `docs/apps-script.js` in sync with what's pasted in the Sheet. Treat changes here as requiring a manual redeploy step.
 - `.gitignore` excludes `images/originals/` — high-res originals live there locally and should not be committed.
