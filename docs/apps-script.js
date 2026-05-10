@@ -992,6 +992,7 @@ function generateMapaMesasRemote() {
 // ====== Printable list ======
 // Builds an "Imprimir" sheet with three sections (Confirmados / Tal vez / Sin responder).
 // Names are arranged in 3 columns, column-major so the eye reads top-to-bottom per column.
+// Each cell is tinted by the guest's primary Etiqueta so families/groups are visually clustered.
 function generatePrintableListRemote() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
@@ -1000,6 +1001,31 @@ function generatePrintableListRemote() {
   var col = {};
   headers.forEach(function(h, i) { col[h] = i; });
 
+  // Soft, print-friendly palette. Black text stays legible on each.
+  var PALETTE = ['#fde2e4', '#e2f0cb', '#c7ceea', '#ffdac1', '#fff3b0', '#e0bbE4', '#b5ead7'];
+  var NO_TAG_COLOR = '#ffffff';
+
+  function firstTag(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return '';
+    var parts = s.split(/[,;]/);
+    return parts[0].trim();
+  }
+
+  // Discover unique primary etiquetas across all guests (skip "no" — they're omitted from the sheet).
+  var tagSet = {};
+  for (var j = 1; j < data.length; j++) {
+    var statusJ = String(data[j][col['confirmado']] || '').trim().toLowerCase();
+    if (statusJ === 'no') continue;
+    var nombreJ = String(data[j][col['Nombre']] || '').trim();
+    if (!nombreJ) continue;
+    var t = firstTag(data[j][col['Etiqueta']]);
+    if (t) tagSet[t] = true;
+  }
+  var uniqueTags = Object.keys(tagSet).sort();
+  var tagColor = {};
+  uniqueTags.forEach(function(tag, idx) { tagColor[tag] = PALETTE[idx % PALETTE.length]; });
+
   var byStatus = { si: [], tal_vez: [], pendiente: [] };
   for (var i = 1; i < data.length; i++) {
     var nombre = String(data[i][col['Nombre']] || '').trim();
@@ -1007,12 +1033,16 @@ function generatePrintableListRemote() {
     var apellido = String(data[i][col['Apellido']] || '').trim();
     var fullName = (nombre + ' ' + apellido).trim();
     var status = String(data[i][col['confirmado']] || '').trim().toLowerCase();
-    if (status === 'si') byStatus.si.push(fullName);
-    else if (status === 'tal_vez') byStatus.tal_vez.push(fullName);
+    var tag = firstTag(data[i][col['Etiqueta']]);
+    var entry = { name: fullName, color: tag ? tagColor[tag] : NO_TAG_COLOR };
+    if (status === 'si') byStatus.si.push(entry);
+    else if (status === 'tal_vez') byStatus.tal_vez.push(entry);
     else if (status === 'no') {} // skip — not coming
-    else byStatus.pendiente.push(fullName);
+    else byStatus.pendiente.push(entry);
   }
-  Object.keys(byStatus).forEach(function(k) { byStatus[k].sort(); });
+  Object.keys(byStatus).forEach(function(k) {
+    byStatus[k].sort(function(a, b) { return a.name.localeCompare(b.name); });
+  });
 
   var pSheet = ss.getSheetByName('Imprimir');
   if (pSheet) { pSheet.clearContents(); pSheet.clearFormats(); }
@@ -1021,9 +1051,27 @@ function generatePrintableListRemote() {
   var COLS = 3;
   var currentRow = 1;
 
-  function writeSection(title, names, opts) {
+  // Legend: one row per etiqueta with its colored swatch.
+  if (uniqueTags.length > 0) {
+    var legendTitle = pSheet.getRange(currentRow, 1, 1, COLS);
+    pSheet.getRange(currentRow, 1).setValue('LEYENDA POR ETIQUETA');
+    legendTitle.merge()
+      .setFontWeight('bold')
+      .setBackground('#5c6b4f')
+      .setFontColor('#ffffff')
+      .setFontSize(12)
+      .setHorizontalAlignment('center');
+    currentRow += 1;
+    uniqueTags.forEach(function(tag) {
+      pSheet.getRange(currentRow, 1).setValue(tag).setBackground(tagColor[tag]).setFontWeight('bold');
+      currentRow += 1;
+    });
+    currentRow += 1; // divider
+  }
+
+  function writeSection(title, entries, opts) {
     opts = opts || {};
-    var n = names.length;
+    var n = entries.length;
 
     // Section title (merged across the 3 columns)
     var titleRange = pSheet.getRange(currentRow, 1, 1, COLS);
@@ -1039,14 +1087,20 @@ function generatePrintableListRemote() {
     if (n > 0) {
       var rowsPerCol = Math.ceil(n / COLS);
       var grid = [];
-      for (var r = 0; r < rowsPerCol; r++) grid.push(['', '', '']);
-      names.forEach(function(name, idx) {
+      var bgGrid = [];
+      for (var r = 0; r < rowsPerCol; r++) {
+        grid.push(['', '', '']);
+        bgGrid.push([NO_TAG_COLOR, NO_TAG_COLOR, NO_TAG_COLOR]);
+      }
+      entries.forEach(function(entry, idx) {
         var row = idx % rowsPerCol;
         var c = Math.floor(idx / rowsPerCol);
-        grid[row][c] = name;
+        grid[row][c] = entry.name;
+        bgGrid[row][c] = entry.color;
       });
       var nameRange = pSheet.getRange(currentRow, 1, rowsPerCol, COLS);
       nameRange.setValues(grid);
+      nameRange.setBackgrounds(bgGrid);
       if (opts.bold) nameRange.setFontWeight('bold');
       if (opts.color) nameRange.setFontColor(opts.color);
       currentRow += rowsPerCol;
