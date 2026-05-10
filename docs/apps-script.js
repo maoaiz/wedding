@@ -550,10 +550,11 @@ function generateWhatsAppMessagesRemote() {
 
   for (var i = 1; i < data.length; i++) {
     var group = String(data[i][col['Grupo']]).trim();
+    if (!group) continue; // skip rows without a Grupo value
     var code = String(data[i][col['codigo']]).trim();
     var phone = String(data[i][col['Telefono']]).trim();
     var confirmado = String(data[i][col['confirmado']]).trim().toLowerCase();
-    if (group && !groups[group]) {
+    if (!groups[group]) {
       groups[group] = { code: code, phone: '', hasSiNo: false };
     }
     if (!groups[group].phone && phone && phone !== '' && phone !== 'undefined') {
@@ -694,8 +695,8 @@ function createResumenRemote() {
     var safe = pattern.replace(/"/g, '""');
     var match = 'COUNTIFS(' + range(etiqueta) + sep + '"*' + safe + '*"' + sep + range(conf) + sep + '"si")';
     var totalTag = 'COUNTIF(' + range(etiqueta) + sep + '"*' + safe + '*")';
-    // Col B = total invitados con esa etiqueta; Col C = % confirmación (confirmados / total)
-    return [label, '=' + totalTag, '=IFERROR(' + match + '/' + totalTag + sep + '0)'];
+    // Col B = total invitados con la etiqueta; Col C = % que esa etiqueta representa del total de confirmados
+    return [label, '=' + totalTag, '=IFERROR(' + match + '/' + nSi + sep + '0)'];
   };
 
   // Build the data array section by section so we can grow it conditionally
@@ -754,7 +755,7 @@ function createResumenRemote() {
 
   // POR ETIQUETA \u2014 dynamically discovered from the data
   data.push(['', '', '']);
-  data.push(['POR ETIQUETA (total / % confirmaci\u00f3n)', '', '']);
+  data.push(['POR ETIQUETA (total / % del total de confirmados)', '', '']);
   if (uniqueTags.length === 0) {
     data.push(['(ninguna etiqueta encontrada)', '', '']);
   } else {
